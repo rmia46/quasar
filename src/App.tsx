@@ -26,6 +26,7 @@ import Console from './components/Console';
 interface SimulatorState {
   registers: number[];
   pc: number;
+  current_line: number | null;
   memory_sample: number[];
   message: string;
 }
@@ -45,6 +46,7 @@ function App() {
   const [state, setState] = useState<SimulatorState>({
     registers: new Array(32).fill(0),
     pc: 0,
+    current_line: null,
     memory_sample: new Array(256).fill(0),
     message: ''
   });
@@ -74,6 +76,7 @@ function App() {
     setMipsCode('');
     setFilePath(null);
     setIsModified(false);
+    setState(prev => ({ ...prev, current_line: null }));
   };
 
   const handleOpenFile = async () => {
@@ -87,6 +90,7 @@ function App() {
         setMipsCode(content);
         setFilePath(selected);
         setIsModified(false);
+        setState(prev => ({ ...prev, current_line: null }));
       }
     } catch (err) {
       console.error("Open Error:", err);
@@ -250,6 +254,7 @@ function App() {
                     onCodeChange={handleCodeChange} 
                     initialCode={mipsCode} 
                     theme={darkMode ? 'vs-dark' : 'light'} 
+                    highlightedLine={state.current_line}
                 />
              </div>
           </div>

@@ -14,6 +14,7 @@ use serde::{Serialize, Deserialize};
 pub struct SimulatorState {
     pub registers: [u32; 32],
     pub pc: u32,
+    pub current_line: Option<u32>, // The source line number (1-based)
     pub memory_sample: Vec<u8>,
     pub message: String,
 }
@@ -24,6 +25,8 @@ pub struct MipsEngine {
     pc: u32,
     program: Vec<MipsInstruction>,
     labels: HashMap<String, u32>,
+    // Maps instruction index to original source line number
+    instruction_to_line: Vec<u32>,
     is_halted: bool,
     output_buffer: String,
 }
@@ -36,6 +39,7 @@ impl MipsEngine {
             pc: 0,
             program: Vec::new(),
             labels: HashMap::new(),
+            instruction_to_line: Vec::new(),
             is_halted: false,
             output_buffer: String::new(),
         }
@@ -44,26 +48,35 @@ impl MipsEngine {
     pub fn load_program(&mut self, assembly: &str) -> Result<(), String> {
         self.reset();
         let mut instructions = Vec::new();
+        let mut line_mappings = Vec::new();
         let mut temp_labels = HashMap::new();
         let mut instruction_index = 0;
 
-        for line in assembly.lines() {
-            let line = line.split('#').next().unwrap_or("").trim();
+        for (zero_based_line, raw_line) in assembly.lines().enumerate() {
+            let line_num = (zero_based_line + 1) as u32;
+            let line = raw_line.split('#').next().unwrap_or("").trim();
+            
             if line.is_empty() { continue; }
 
             if line.ends_with(':') {
                 let label = line[..line.len()-1].to_string();
                 temp_labels.insert(label, instruction_index);
             } else {
-                if let Some(inst) = Parser::parse_line(line)? {
-                    instructions.push(inst);
-                    instruction_index += 1;
+                match Parser::parse_line(line) {
+                    Ok(Some(inst)) => {
+                        instructions.push(inst);
+                        line_mappings.push(line_num);
+                        instruction_index += 1;
+                    },
+                    Ok(None) => {},
+                    Err(e) => return Err(format!("Line {}: {}", line_num, e)),
                 }
             }
         }
 
         self.program = instructions;
         self.labels = temp_labels;
+        self.instruction_to_line = line_mappings;
         Ok(())
     }
 
@@ -76,7 +89,6 @@ impl MipsEngine {
         let mut next_pc = self.pc + 1;
 
         match inst {
-            // R-Type
             MipsInstruction::Add { rd, rs, rt } => {
                 let val = self.registers.read(rs).wrapping_add(self.registers.read(rt));
                 self.registers.write(rd, val);
@@ -105,8 +117,6 @@ impl MipsEngine {
                 let val = if (self.registers.read(rs) as i32) < (self.registers.read(rt) as i32) { 1 } else { 0 };
                 self.registers.write(rd, val);
             },
-
-            // I-Type
             MipsInstruction::Addi { rt, rs, imm } => {
                 let val = self.registers.read(rs).wrapping_add(imm as u32);
                 self.registers.write(rt, val);
@@ -147,37 +157,30 @@ impl MipsEngine {
                     next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
                 }
             },
-
-            // J-Type
             MipsInstruction::J { label } => {
                 next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
             },
             MipsInstruction::Jal { label } => {
-                self.registers.write(31, (self.pc + 1) * 4); // Store return address (simplified)
+                self.registers.write(31, (self.pc + 1) * 4);
                 next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
             },
             MipsInstruction::Jr { rs } => {
-                // High-level simplification: if $ra, try to return to next instruction
-                // Real JR requires mapping absolute addresses back to instruction indices.
                 if rs == 31 {
-                    self.is_halted = true; // For now, treat returning from main as halt
+                    self.is_halted = true;
                     self.output_buffer.push_str("\n[Program Halted via JR $ra]");
                 } else {
-                    return Err("Complex JR not supported in this simplified engine".to_string());
+                    return Err("Complex JR not supported".to_string());
                 }
             },
-
             MipsInstruction::Syscall => {
                 let v0 = self.registers.read(2);
                 match v0 {
-                    1 => { // print_int
+                    1 => {
                         let a0 = self.registers.read(4);
                         self.output_buffer.push_str(&format!("{}", a0 as i32));
                     },
-                    10 => { // exit
-                        self.is_halted = true;
-                    },
-                    _ => self.output_buffer.push_str(&format!("\n[Warning: Syscall {} not implemented]", v0)),
+                    10 => self.is_halted = true,
+                    _ => self.output_buffer.push_str(&format!("\n[Syscall {} not implemented]", v0)),
                 }
             },
             MipsInstruction::Break => {
@@ -199,7 +202,7 @@ impl MipsEngine {
         
         let mut result = self.output_buffer.clone();
         if count >= 5000 {
-            result.push_str("\n[Error: Program timed out - possible infinite loop]");
+            result.push_str("\n[Error: Timeout]");
         } else {
             result.push_str(&format!("\n[Completed in {} steps]", count));
         }
@@ -207,9 +210,12 @@ impl MipsEngine {
     }
 
     pub fn get_state(&self, message: String) -> SimulatorState {
+        let current_line = self.instruction_to_line.get(self.pc as usize).cloned();
+        
         SimulatorState {
             registers: self.registers.get_all(),
-            pc: self.pc * 4, // Show PC as byte offset for user
+            pc: self.pc * 4,
+            current_line,
             memory_sample: self.memory.get_sample(256),
             message,
         }
@@ -221,5 +227,6 @@ impl MipsEngine {
         self.pc = 0;
         self.is_halted = false;
         self.output_buffer.clear();
+        self.instruction_to_line.clear();
     }
 }

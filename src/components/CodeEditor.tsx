@@ -5,19 +5,53 @@ interface CodeEditorProps {
   onCodeChange: (code: string) => void;
   initialCode?: string;
   theme?: 'vs-dark' | 'light';
+  highlightedLine?: number | null;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ onCodeChange, initialCode = '', theme = 'vs-dark' }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ 
+  onCodeChange, 
+  initialCode = '', 
+  theme = 'vs-dark',
+  highlightedLine = null
+}) => {
   const monaco = useMonaco();
   const editorRef = useRef<any>(null);
+  const decorationsRef = useRef<string[]>([]);
   const [code, setCode] = useState(initialCode);
 
-  // Sync theme whenever it changes
+  // Sync theme
   useEffect(() => {
     if (monaco) {
       monaco.editor.setTheme(theme === 'vs-dark' ? 'mips-dark' : 'mips-light');
     }
   }, [theme, monaco]);
+
+  // Sync Highlighted Line
+  useEffect(() => {
+    if (monaco && editorRef.current) {
+      const editor = editorRef.current;
+      
+      // Clear old decorations
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
+
+      if (highlightedLine !== null && highlightedLine > 0) {
+        // Add new decoration
+        decorationsRef.current = editor.deltaDecorations([], [
+          {
+            range: new monaco.Range(highlightedLine, 1, highlightedLine, 1),
+            options: {
+              isWholeLine: true,
+              className: 'current-instruction-highlight',
+              glyphMarginClassName: 'current-instruction-glyph',
+            }
+          }
+        ]);
+
+        // Reveal line if it's out of view
+        editor.revealLineInCenterIfOutsideViewport(highlightedLine);
+      }
+    }
+  }, [highlightedLine, monaco]);
 
   function handleEditorDidMount(editor: any, monacoInstance: any) {
     editorRef.current = editor;
@@ -32,7 +66,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ onCodeChange, initialCode = '',
           [/#.*$/, 'comment'],
           [/\$[svat][0-9]|\$[raesp]|\$[zero]/, 'variable'],
           [/\$[0-9]{1,2}/, 'variable'],
-          [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|jr|jal|j|beq|bne|lw|sw|lb|sb|lh|sh|li|syscall)\b/, 'keyword'],
+          [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|jr|jal|j|beq|bne|lw|sw|lb|sb|lh|sh|li|syscall|move|nop|break|lui|xori)\b/, 'keyword'],
           [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
           [/\b\d+\b/, 'number'],
           [/0x[0-9a-fA-F]+\b/, 'number'],
@@ -61,7 +95,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ onCodeChange, initialCode = '',
         { token: 'string', foreground: 'CE9178' },
       ],
       colors: {
-        'editor.background': '#1e1e1e', // Matches VS Code dark
+        'editor.background': '#1e1e1e',
         'editor.foreground': '#D4D4D4',
       },
     });
@@ -94,22 +128,36 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ onCodeChange, initialCode = '',
   }
 
   return (
-    <Editor
-      height="100%"
-      language="mips"
-      theme={theme === 'vs-dark' ? 'mips-dark' : 'mips-light'}
-      value={code}
-      onMount={handleEditorDidMount}
-      onChange={handleEditorChange}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 14,
-        wordWrap: 'on',
-        scrollBeyondLastLine: false,
-        automaticLayout: true,
-        padding: { top: 10 }
-      }}
-    />
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .current-instruction-highlight {
+          background: rgba(30, 144, 255, 0.2) !important;
+          border-left: 3px solid #1e90ff !important;
+        }
+        .current-instruction-glyph {
+          background: #1e90ff;
+          width: 5px !important;
+          margin-left: 5px;
+        }
+      `}} />
+      <Editor
+        height="100%"
+        language="mips"
+        theme={theme === 'vs-dark' ? 'mips-dark' : 'mips-light'}
+        value={code}
+        onMount={handleEditorDidMount}
+        onChange={handleEditorChange}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 14,
+          wordWrap: 'on',
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+          padding: { top: 10 },
+          glyphMargin: true,
+        }}
+      />
+    </>
   );
 };
 
