@@ -71,6 +71,17 @@ function App() {
   const editorRef = useRef<any>(null);
   const untitledCounter = useRef(1);
 
+  // Disable context menu
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS(QUASAR_DARK));
 
   // Window Controls

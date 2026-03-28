@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Terminal, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Info, Command } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Terminal, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Info, Command, Copy, Check } from 'lucide-react';
 
 interface ConsoleProps {
   output: string;
@@ -17,6 +17,8 @@ interface ParsedLine {
 }
 
 const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height }) => {
+  const [copied, setCopied] = useState(false);
+
   const parsedLines = useMemo(() => {
     if (!output) return [];
     
@@ -40,6 +42,18 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
       return { content, type, timestamp: timeStr };
     });
   }, [output]);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!output) return;
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy console output', err);
+    }
+  };
 
   const getLineStyles = (type: LineType) => {
     switch (type) {
@@ -77,9 +91,22 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
             Console Output
           </span>
           {parsedLines.length > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 bg-blue-600/20 text-blue-500 text-[9px] font-black rounded-md">
-              {parsedLines.length} LINES
-            </span>
+            <div className="flex items-center gap-2 ml-2">
+              <span className="px-1.5 py-0.5 bg-blue-600/20 text-blue-500 text-[9px] font-black rounded-md">
+                {parsedLines.length} LINES
+              </span>
+              <button 
+                onClick={handleCopy}
+                className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all text-[9px] font-bold uppercase tracking-wider
+                  ${copied 
+                    ? 'bg-green-500/20 text-green-500' 
+                    : 'bg-[var(--app-background)] border border-[var(--border)] text-[var(--app-foreground)] opacity-60 hover:opacity-100 hover:border-blue-500/50'}
+                `}
+              >
+                {copied ? <Check size={10} /> : <Copy size={10} />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
           )}
         </div>
         <button className="text-[var(--app-foreground)] opacity-50 hover:opacity-100 transition-colors">
@@ -93,14 +120,14 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
           {parsedLines.length > 0 ? (
             <div className="flex flex-col">
               {parsedLines.map((line, i) => (
-                <div key={i} className={`flex items-start gap-3 px-4 py-1.5 hover:bg-white/5 transition-colors group ${getLineStyles(line.type)}`}>
+                <div key={i} className={`flex items-start gap-3 px-4 py-1.5 hover:bg-white/5 transition-colors group select-text ${getLineStyles(line.type)}`}>
                   <span className="text-[9px] opacity-50 select-none whitespace-nowrap mt-0.5 font-bold tracking-tighter">
                     [{line.timestamp}]
                   </span>
-                  <span className="mt-0.5 opacity-50">
+                  <span className="mt-0.5 opacity-50 select-none">
                     {getIcon(line.type)}
                   </span>
-                  <span className="flex-1 whitespace-pre-wrap break-all leading-relaxed font-medium">
+                  <span className="flex-1 whitespace-pre-wrap break-all leading-relaxed font-medium select-text">
                     {line.content}
                   </span>
                 </div>
