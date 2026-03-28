@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { appDataDir, join } from '@tauri-apps/api/path';
 import { 
   Play, 
   RotateCcw, 
@@ -33,16 +34,29 @@ interface SimulatorState {
 
 const isTauri = () => !!(window as any).__TAURI_INTERNALS__;
 
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 11);
+};
+
+interface OpenFile {
+  id: string;
+  path: string | null;
+  name: string;
+  code: string;
+  isModified: boolean;
+}
+
 function App() {
   const [darkMode, setDarkMode] = useState(true);
-  const [mipsCode, setMipsCode] = useState('');
-  const [filePath, setFilePath] = useState<string | null>(null);
-  const [isModified, setIsModified] = useState(false);
-  
+  const [openFiles, setOpenFiles] = useState<OpenFile[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [consoleHeight, setConsoleHeight] = useState(180);
   const [isConsoleCollapsed, setIsConsoleCollapsed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  
+
   const [state, setState] = useState<SimulatorState>({
     registers: new Array(32).fill(0),
     pc: 0,
@@ -50,6 +64,28 @@ function App() {
     memory_sample: new Array(256).fill(0),
     message: ''
   });
+
+  // File Operations
+  const handleNewFile = useCallback(async () => {
+    const id = generateId();
+    const newFile: OpenFile = {
+      id,
+      path: null,
+      name: `Untitled-${openFiles.length + 1}.mips`,
+      code: '',
+      isModified: false,
+    };
+    setOpenFiles(prev => [...prev, newFile]);
+    setActiveFileId(id);
+    setState(prev => ({ ...prev, current_line: null }));
+  }, [openFiles.length]);
+
+  // Initialize with an untitled file if empty
+  useEffect(() => {
+    if (openFiles.length === 0) {
+      handleNewFile();
+    }
+  }, [openFiles.length, handleNewFile]);
 
   const updateTheme = useCallback(async () => {
     if (!isTauri()) return;
@@ -71,13 +107,9 @@ function App() {
     return () => { if (unlisten) unlisten(); };
   }, [updateTheme]);
 
-  // File Operations
-  const handleNewFile = () => {
-    setMipsCode('');
-    setFilePath(null);
-    setIsModified(false);
-    setState(prev => ({ ...prev, current_line: null }));
-  };
+  // Get current file data based on active file ID
+  const activeFile = openFiles.find(f => f.id === activeFileId);
+  const isModified = activeFile?.isModified || false;
 
   const handleOpenFile = async () => {
     try {
@@ -86,10 +118,25 @@ function App() {
         filters: [{ name: 'MIPS Assembly', extensions: ['mips', 's', 'asm'] }]
       });
       if (selected && typeof selected === 'string') {
+        // Check if file is already open
+        const alreadyOpen = openFiles.find(f => f.path === selected);
+        if (alreadyOpen) {
+          setActiveFileId(alreadyOpen.id);
+          return;
+        }
+
         const content = await readTextFile(selected);
-        setMipsCode(content);
-        setFilePath(selected);
-        setIsModified(false);
+        const name = selected.split(/[\\/]/).pop() || 'unknown.mips';
+        const id = generateId();
+        const newFile: OpenFile = {
+          id,
+          path: selected,
+          name,
+          code: content,
+          isModified: false,
+        };
+        setOpenFiles(prev => [...prev, newFile]);
+        setActiveFileId(id);
         setState(prev => ({ ...prev, current_line: null }));
       }
     } catch (err) {
@@ -97,40 +144,107 @@ function App() {
     }
   };
 
-  const handleSaveFile = async () => {
+  const handleSaveFile = useCallback(async () => {
+    if (!activeFile) return;
+
     try {
-      let path = filePath;
+      let path = activeFile.path;
       if (!path) {
         path = await save({
           filters: [{ name: 'MIPS Assembly', extensions: ['mips', 's', 'asm'] }]
         });
+        if (!path) return;
       }
-      
-      if (path) {
-        await writeTextFile(path, mipsCode);
-        setFilePath(path);
-        setIsModified(false);
-      }
+
+      const content = activeFile.code;
+      await writeTextFile(path, content);
+      const name = path.split(/[\\/]/).pop() || activeFile.name;
+
+      setOpenFiles(prev => prev.map(f =>
+        f.id === activeFileId ? { ...f, path, name, isModified: false } : f
+      ));
     } catch (err) {
       console.error("Save Error:", err);
     }
-  };
+  }, [activeFile, activeFileId]);
+
+  const handleSaveFileAs = useCallback(async () => {
+    if (!activeFile) return;
+
+    try {
+      const path = await save({
+        filters: [{ name: 'MIPS Assembly', extensions: ['mips', 's', 'asm'] }]
+      });
+
+      if (path) {
+        const content = activeFile.code;
+        await writeTextFile(path, content);
+        const name = path.split(/[\\/]/).pop() || activeFile.name;
+
+        setOpenFiles(prev => prev.map(f =>
+          f.id === activeFileId ? { ...f, path, name, isModified: false } : f
+        ));
+      }
+    } catch (err) {
+      console.error("Save As Error:", err);
+    }
+  }, [activeFile, activeFileId]);
+
+  const closeFile = useCallback((idToRemove: string) => {
+    const fileIndex = openFiles.findIndex(f => f.id === idToRemove);
+    const newFiles = openFiles.filter(f => f.id !== idToRemove);
+    
+    if (newFiles.length === 0) {
+      const id = generateId();
+      setOpenFiles([{ id, path: null, name: 'Untitled-1.mips', code: '', isModified: false }]);
+      setActiveFileId(id);
+    } else {
+      setOpenFiles(newFiles);
+      if (activeFileId === idToRemove) {
+        const nextIndex = Math.min(fileIndex, newFiles.length - 1);
+        setActiveFileId(newFiles[nextIndex].id);
+      }
+    }
+  }, [openFiles, activeFileId]);
 
   const handleExit = async () => {
     const win = getCurrentWindow();
     await win.close();
   };
 
-  const handleCodeChange = (newCode: string) => {
-    setMipsCode(newCode);
-    setIsModified(true);
-  };
+  const handleCodeChange = useCallback((newCode: string) => {
+    setOpenFiles(prev => prev.map(f =>
+      f.id === activeFileId ? { ...f, code: newCode, isModified: true } : f
+    ));
+  }, [activeFileId]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S to save
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSaveFile();
+      }
+      // Ctrl+N to create new file
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        handleNewFile();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleSaveFile, handleNewFile]);
 
   // Simulator Operations
   const handleRun = async () => {
     if (!isTauri()) return;
     try {
-      const result = await invoke<SimulatorState>('run_mips_code', { code: mipsCode });
+      const code = activeFile?.code || '';
+      const result = await invoke<SimulatorState>('run_mips_code', { code });
       setState(result);
       if (isConsoleCollapsed) setIsConsoleCollapsed(false);
     } catch (err) {
@@ -141,7 +255,8 @@ function App() {
   const handleStep = async () => {
     if (!isTauri()) return;
     try {
-      const result = await invoke<SimulatorState>('step_mips_code', { code: mipsCode });
+      const code = activeFile?.code || '';
+      const result = await invoke<SimulatorState>('step_mips_code', { code });
       setState(result);
       if (isConsoleCollapsed) setIsConsoleCollapsed(false);
     } catch (err) {
@@ -181,7 +296,14 @@ function App() {
     };
   }, [resize, stopResizing]);
 
-  const fileName = filePath ? filePath.split(/[\\/]/).pop() : 'untitled.mips';
+  const activeFileName = activeFile?.name || 'untitled.mips';
+
+  // Update window title
+  useEffect(() => {
+    if (!isTauri()) return;
+    const win = getCurrentWindow();
+    win.setTitle(`Quasar - ${activeFileName}${isModified ? '*' : ''}`);
+  }, [activeFileName, isModified]);
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${darkMode ? 'dark' : ''} ${isResizing ? 'cursor-row-resize select-none' : ''}`}>
@@ -192,6 +314,7 @@ function App() {
           { label: 'New File', onClick: handleNewFile },
           { label: 'Open File...', onClick: handleOpenFile },
           { label: 'Save', onClick: handleSaveFile },
+          { label: 'Save As...', onClick: handleSaveFileAs },
           { separator: true },
           { label: 'Exit', onClick: handleExit },
         ]} />
@@ -230,29 +353,47 @@ function App() {
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div className="flex-1 overflow-hidden relative border-r border-gray-200 dark:border-[#2a2a2a] flex flex-col">
              {/* Tab Bar */}
-             <div className="h-9 bg-gray-100 dark:bg-[#252526] flex items-center border-b border-gray-200 dark:border-[#1e1e1e]">
-                <div className={`
-                  flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-gray-200 dark:border-[#1e1e1e] transition-colors
-                  ${isModified ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-[#1e1e1e] text-gray-600 dark:text-gray-300'}
-                `}>
-                    <Code size={14} className={isModified ? 'text-blue-500' : 'text-gray-400'} />
-                    <span>{fileName}{isModified ? '*' : ''}</span>
-                    <button 
-                      className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-sm transition-colors group"
-                      onClick={handleNewFile}
-                    >
-                      {isModified ? (
-                        <Circle size={10} fill="currentColor" className="text-blue-500" />
-                      ) : (
-                        <X size={12} className="text-gray-400 group-hover:text-red-500" />
-                      )}
-                    </button>
-                </div>
+             <div className="h-9 bg-gray-100 dark:bg-[#252526] flex items-center border-b border-gray-200 dark:border-[#1e1e1e] overflow-x-auto no-scrollbar">
+                {openFiles.map(file => (
+                  <div 
+                    key={file.id}
+                    onClick={() => setActiveFileId(file.id)}
+                    className={`
+                      flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-gray-200 dark:border-[#1e1e1e] transition-colors cursor-pointer min-w-[120px] max-w-[200px]
+                      ${activeFileId === file.id 
+                        ? (file.isModified ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200') 
+                        : 'bg-gray-100 dark:bg-[#2d2d2d] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333]'}
+                    `}
+                  >
+                      <Code size={14} className={file.isModified ? 'text-blue-500' : 'text-gray-400'} />
+                      <span className="truncate flex-1">{file.name}{file.isModified ? '*' : ''}</span>
+                      <button 
+                        className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-sm transition-colors group"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeFile(file.id);
+                        }}
+                      >
+                        {file.isModified ? (
+                          <Circle size={8} fill="currentColor" className="text-blue-500" />
+                        ) : (
+                          <X size={12} className="text-gray-400 group-hover:text-red-500" />
+                        )}
+                      </button>
+                  </div>
+                ))}
+                <button 
+                  onClick={handleNewFile}
+                  className="px-3 h-full flex items-center justify-center text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333] transition-colors"
+                >
+                  <X size={14} className="rotate-45" />
+                </button>
              </div>
              <div className="flex-1 overflow-hidden">
                 <CodeEditor 
+                    key={activeFileId}
                     onCodeChange={handleCodeChange} 
-                    initialCode={mipsCode} 
+                    initialCode={activeFile?.code || ''} 
                     theme={darkMode ? 'vs-dark' : 'light'} 
                     highlightedLine={state.current_line}
                 />

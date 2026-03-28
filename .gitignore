@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# AI - Ignore local session data and history
+.gemini/
+.claude/
+
+# AI - Ignore personal/local instruction overrides
+*.local.md
