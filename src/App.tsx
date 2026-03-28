@@ -388,7 +388,7 @@ function App() {
   }, [activeFileName, isModified]);
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden ${isResizing ? 'cursor-row-resize select-none' : ''}`}>
+    <div className={`flex flex-col h-screen overflow-hidden transition-all duration-300 ${!isMaximized ? 'rounded-xl border border-[var(--border)] shadow-2xl' : ''} ${isResizing ? 'cursor-row-resize select-none' : ''} bg-[var(--app-background)]`}>
       
       {/* 1. Custom Title Bar / Menu Bar */}
       <nav data-tauri-drag-region className="h-10 bg-[var(--toolbar-background)] border-b border-[var(--border)] flex items-center justify-between px-4 transition-colors duration-200 shrink-0 select-none shadow-sm relative z-50 cursor-default">
