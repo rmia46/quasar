@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Terminal, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Info, Command, Copy, Check } from 'lucide-react';
 
 interface ConsoleProps {
@@ -18,6 +18,7 @@ interface ParsedLine {
 
 const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height }) => {
   const [copied, setCopied] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const parsedLines = useMemo(() => {
     if (!output) return [];
@@ -52,6 +53,21 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy console output', err);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      e.preventDefault();
+      if (contentRef.current) {
+        const range = document.createRange();
+        range.selectNodeContents(contentRef.current);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
     }
   };
 
@@ -116,7 +132,12 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
 
       {/* Console Content */}
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto font-mono text-[11px] custom-scrollbar bg-[var(--console-background)]">
+        <div 
+          ref={contentRef}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          className="flex-1 overflow-y-auto font-mono text-[11px] custom-scrollbar bg-[var(--console-background)] focus:outline-none"
+        >
           {parsedLines.length > 0 ? (
             <div className="flex flex-col">
               {parsedLines.map((line, i) => (
