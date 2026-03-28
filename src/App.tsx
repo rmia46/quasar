@@ -12,14 +12,16 @@ import {
   Save, 
   StepForward, 
   Code,
-  Info,
   ChevronRight,
   Monitor,
   X,
   Circle,
   Undo,
   Redo,
-  HelpCircle
+  HelpCircle,
+  Minus,
+  Square,
+  Copy
 } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import RegisterView from './components/RegisterView';
@@ -64,9 +66,40 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const editorRef = useRef<any>(null);
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS(QUASAR_DARK));
+
+  // Window Controls
+  const handleMinimize = async () => {
+    if (!isTauri()) return;
+    await getCurrentWindow().minimize();
+  };
+
+  const handleMaximize = async () => {
+    if (!isTauri()) return;
+    const win = getCurrentWindow();
+    await win.toggleMaximize();
+    setIsMaximized(await win.isMaximized());
+  };
+
+  const handleClose = async () => {
+    if (!isTauri()) return;
+    await getCurrentWindow().close();
+  };
+
+  // Listen for window resize to update maximized state
+  useEffect(() => {
+    if (!isTauri()) return;
+    const win = getCurrentWindow();
+    const unlisten = win.onResized(async () => {
+      setIsMaximized(await win.isMaximized());
+    });
+    return () => {
+      unlisten.then(u => u());
+    };
+  }, []);
 
   // Initialize Settings from File System
   useEffect(() => {
@@ -234,11 +267,6 @@ function App() {
     }
   }, [openFiles, activeFileId]);
 
-  const handleExit = async () => {
-    const win = getCurrentWindow();
-    await win.close();
-  };
-
   const handleCodeChange = useCallback((newCode: string) => {
     setOpenFiles(prev => prev.map(f =>
       f.id === activeFileId ? { ...f, code: newCode, isModified: true } : f
@@ -257,6 +285,26 @@ function App() {
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         handleNewFile();
+      }
+      // Ctrl+O to open file
+      if (e.ctrlKey && e.key === 'o') {
+        e.preventDefault();
+        handleOpenFile();
+      }
+      // F5 to run
+      if (e.key === 'F5') {
+        e.preventDefault();
+        handleRun();
+      }
+      // F10 to step
+      if (e.key === 'F10') {
+        e.preventDefault();
+        handleStep();
+      }
+      // Ctrl+R to reset
+      if (e.ctrlKey && e.key === 'r') {
+        e.preventDefault();
+        handleReset();
       }
     };
 
@@ -328,64 +376,92 @@ function App() {
   // Update window title
   useEffect(() => {
     if (!isTauri()) return;
-    const win = getCurrentWindow();
-    win.setTitle(`Quasar - ${activeFileName}${isModified ? '*' : ''}`);
+    const updateTitle = async () => {
+      try {
+        const win = getCurrentWindow();
+        await win.setTitle(`Quasar - ${activeFileName}${isModified ? '*' : ''}`);
+      } catch (e) {
+        console.warn("Failed to set window title:", e);
+      }
+    };
+    updateTitle();
   }, [activeFileName, isModified]);
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${isResizing ? 'cursor-row-resize select-none' : ''}`}>
       
-      {/* 1. Menu Bar */}
-      <nav className="h-7 bg-[var(--toolbar-background)] border-b border-[var(--border)] flex items-center px-3 gap-1 transition-colors duration-200 shrink-0">
-        <MenuButton label="File" items={[
-          { label: 'New File', onClick: handleNewFile },
-          { label: 'Open File...', onClick: handleOpenFile },
-          { label: 'Save', onClick: handleSaveFile },
-          { label: 'Save As...', onClick: handleSaveFileAs },
-          { separator: true },
-          { label: 'Exit', onClick: handleExit },
-        ]} />
-        <MenuButton label="Edit" items={[{ label: 'Undo' }, { label: 'Redo' }]} />
-        <MenuButton label="Run" items={[
-          { label: 'Run Simulation', onClick: handleRun },
-          { label: 'Step Forward', onClick: handleStep },
-          { label: 'Reset Engine', onClick: handleReset },
-        ]} />
-        <MenuButton label="Settings" items={[
-          { label: 'Preferences...', onClick: () => setIsSettingsOpen(true) },
-          { separator: true },
-          { label: 'Load Theme...', onClick: handleLoadTheme },
-          { label: 'Theme: Quasar Dark', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_DARK })) },
-          { label: 'Theme: Quasar Light', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_LIGHT })) },
-        ]} />
-        <MenuButton label="Help" items={[
-          { label: 'Documentation', onClick: () => setIsHelpOpen(true) },
-          { label: 'About Quasar' }
-        ]} />
+      {/* 1. Custom Title Bar / Menu Bar */}
+      <nav data-tauri-drag-region className="h-10 bg-[var(--toolbar-background)] border-b border-[var(--border)] flex items-center justify-between px-4 transition-colors duration-200 shrink-0 select-none shadow-sm relative z-50 cursor-default">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-4 group cursor-pointer">
+            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+              <Cpu size={14} className="text-white" />
+            </div>
+            <span className="text-[11px] font-bold tracking-tighter text-[var(--app-foreground)] opacity-80 uppercase">Quasar</span>
+          </div>
+
+          <MenuButton label="File" items={[
+            { label: 'New File', onClick: handleNewFile, shortcut: 'Ctrl+N' },
+            { label: 'Open File...', onClick: handleOpenFile, shortcut: 'Ctrl+O' },
+            { label: 'Save', onClick: handleSaveFile, shortcut: 'Ctrl+S' },
+            { label: 'Save As...', onClick: handleSaveFileAs, shortcut: 'Ctrl+Shift+S' },
+            { separator: true },
+            { label: 'Exit', onClick: handleClose, shortcut: 'Alt+F4' },
+          ]} />
+          <MenuButton label="Edit" items={[
+            { label: 'Undo', onClick: handleUndo, shortcut: 'Ctrl+Z' }, 
+            { label: 'Redo', onClick: handleRedo, shortcut: 'Ctrl+Y' }
+          ]} />
+          <MenuButton label="Run" items={[
+            { label: 'Run Simulation', onClick: handleRun, shortcut: 'F5' },
+            { label: 'Step Forward', onClick: handleStep, shortcut: 'F10' },
+            { label: 'Reset Engine', onClick: handleReset, shortcut: 'Ctrl+R' },
+          ]} />
+          <MenuButton label="Settings" items={[
+            { label: 'Preferences...', onClick: () => setIsSettingsOpen(true) },
+            { separator: true },
+            { label: 'Load Theme...', onClick: handleLoadTheme },
+            { label: 'Theme: Quasar Dark', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_DARK })) },
+            { label: 'Theme: Quasar Light', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_LIGHT })) },
+          ]} />
+          <MenuButton label="Help" items={[
+            { label: 'Documentation', onClick: () => setIsHelpOpen(true) },
+            { label: 'About Quasar' }
+          ]} />
+        </div>
+
+        {/* Window Title (Visible on frameless windows) */}
+        <div className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.4em] opacity-20 pointer-events-none whitespace-nowrap hidden lg:block">
+          {activeFileName}{isModified ? '*' : ''}
+        </div>
+
+        <div className="flex items-center gap-1 h-full py-1.5">
+          <WindowControlButton icon={<Minus size={14} />} onClick={handleMinimize} />
+          <WindowControlButton icon={isMaximized ? <Copy size={12} /> : <Square size={12} />} onClick={handleMaximize} />
+          <WindowControlButton icon={<X size={14} />} onClick={handleClose} isClose />
+        </div>
       </nav>
 
       {/* 2. Top Toolbar */}
-      <div className="h-12 bg-[var(--app-background)] border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 transition-colors duration-200 shadow-sm z-20">
-        <div className="flex items-center gap-1">
-          <ToolbarButton icon={<FileText size={16} />} label="New" onClick={handleNewFile} />
-          <ToolbarButton icon={<FolderOpen size={16} />} label="Open" onClick={handleOpenFile} />
-          <ToolbarButton icon={<Save size={16} />} label="Save" onClick={handleSaveFile} />
-          <div className="w-px h-6 bg-[var(--border)] mx-2" />
-          <ToolbarButton icon={<Undo size={16} />} label="Undo" onClick={handleUndo} />
-          <ToolbarButton icon={<Redo size={16} />} label="Redo" onClick={handleRedo} />
-          <div className="w-px h-6 bg-[var(--border)] mx-2" />
-          <ToolbarButton icon={<Play size={16} className="text-green-600 fill-green-600/20" />} label="Run" onClick={handleRun} primary />
-          <ToolbarButton icon={<StepForward size={16} className="text-blue-500" />} label="Step" onClick={handleStep} />
-          <ToolbarButton icon={<RotateCcw size={16} className="text-orange-500" />} label="Reset" onClick={handleReset} />
+      <div className="h-14 bg-[var(--app-background)] border-b border-[var(--border)] flex items-center justify-between px-6 shrink-0 transition-colors duration-200 z-40">
+        <div className="flex items-center gap-2">
+          <ToolbarButton icon={<FileText size={18} />} label="New" onClick={handleNewFile} />
+          <ToolbarButton icon={<FolderOpen size={18} />} label="Open" onClick={handleOpenFile} />
+          <ToolbarButton icon={<Save size={18} />} label="Save" onClick={handleSaveFile} />
+          <div className="w-px h-6 bg-[var(--border)] mx-3" />
+          <ToolbarButton icon={<Undo size={18} />} label="Undo" onClick={handleUndo} />
+          <ToolbarButton icon={<Redo size={18} />} label="Redo" onClick={handleRedo} />
+          <div className="w-px h-6 bg-[var(--border)] mx-3" />
+          <ToolbarButton icon={<Play size={18} className="text-green-500 fill-green-500/10" />} label="Run" onClick={handleRun} primary />
+          <ToolbarButton icon={<StepForward size={18} className="text-blue-500" />} label="Step" onClick={handleStep} />
+          <ToolbarButton icon={<RotateCcw size={18} className="text-orange-500" />} label="Reset" onClick={handleReset} />
         </div>
 
-        <div className="flex items-center gap-4 mr-2">
-            <ToolbarButton icon={<HelpCircle size={16} />} label="Help" onClick={() => setIsHelpOpen(true)} />
-            <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                <Cpu size={14} />
+        <div className="flex items-center gap-4">
+            <ToolbarButton icon={<HelpCircle size={18} />} label="Help" onClick={() => setIsHelpOpen(true)} />
+            <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full uppercase tracking-widest">
                 MIPS32 R2000
             </div>
-            <Info size={16} className="text-[var(--app-foreground)] opacity-50 cursor-help" />
         </div>
       </div>
 
@@ -493,14 +569,14 @@ function App() {
 function MenuButton({ label, items }: { label: string, items: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="relative" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-      <button className="text-[11px] px-3 py-1 hover:bg-[var(--tab-active)] rounded text-[var(--app-foreground)] opacity-80 hover:opacity-100 transition-colors cursor-pointer h-full">
+    <div className="relative h-full" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
+      <button className="text-[11px] px-3 h-full hover:bg-blue-600/10 rounded-md text-[var(--app-foreground)] opacity-70 hover:opacity-100 transition-all cursor-pointer font-medium">
         {label}
       </button>
       {isOpen && (
-        <div className="absolute left-0 top-full w-48 bg-[var(--tab-inactive)] border border-[var(--border)] shadow-lg rounded-sm py-1 z-50 animate-in fade-in slide-in-from-top-1">
+        <div className="absolute left-0 top-[90%] w-52 bg-[var(--tab-inactive)] border border-[var(--border)] shadow-2xl rounded-lg py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
           {items.map((item, i) => item.separator ? (
-            <div key={i} className="h-px bg-[var(--border)] my-1 mx-2" />
+            <div key={i} className="h-px bg-[var(--border)] my-1.5 mx-3" />
           ) : (
             <button
               key={i}
@@ -508,9 +584,10 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
                 item.onClick?.();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-4 py-1.5 text-[11px] text-[var(--app-foreground)] opacity-80 hover:opacity-100 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+              className="w-full text-left px-4 py-2 text-[11px] text-[var(--app-foreground)] opacity-70 hover:opacity-100 hover:bg-blue-600 hover:text-white transition-all cursor-pointer flex items-center justify-between group"
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.shortcut && <span className="text-[9px] opacity-40 group-hover:opacity-100 font-mono tracking-tighter">{item.shortcut}</span>}
             </button>
           ))}
         </div>
@@ -521,9 +598,36 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
 
 function ToolbarButton({ icon, label, onClick, primary = false }: { icon: React.ReactNode; label: string; onClick?: () => void; primary?: boolean; }) {
   return (
-    <button onClick={onClick} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all active:scale-95 cursor-pointer ${primary ? 'hover:bg-[var(--tab-active)] font-bold text-[var(--app-foreground)]' : 'hover:bg-[var(--tab-active)] text-[var(--app-foreground)] opacity-60 hover:opacity-100'}`} title={label}>
+    <button 
+      onClick={onClick} 
+      className={`
+        flex flex-col items-center justify-center gap-1 w-14 h-11 rounded-xl transition-all active:scale-90 cursor-pointer group
+        ${primary 
+          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500' 
+          : 'hover:bg-blue-600/5 text-[var(--app-foreground)] opacity-60 hover:opacity-100 border border-transparent hover:border-blue-600/10'}
+      `} 
+      title={label}
+    >
+      <div className={`${primary ? '' : 'group-hover:scale-110 transition-transform duration-200'}`}>
+        {icon}
+      </div>
+      <span className="text-[9px] font-bold uppercase tracking-tighter hidden md:inline opacity-60 group-hover:opacity-100">{label}</span>
+    </button>
+  );
+}
+
+function WindowControlButton({ icon, onClick, isClose = false }: { icon: React.ReactNode; onClick: () => void; isClose?: boolean; }) {
+  return (
+    <button 
+      onClick={onClick} 
+      className={`
+        h-7 w-10 flex items-center justify-center rounded-lg transition-all duration-200
+        ${isClose 
+          ? 'hover:bg-red-500 hover:text-white text-red-500/70' 
+          : 'hover:bg-blue-600/10 text-[var(--app-foreground)] opacity-40 hover:opacity-100'}
+      `}
+    >
       {icon}
-      <span className="text-[11px] font-medium hidden md:inline">{label}</span>
     </button>
   );
 }

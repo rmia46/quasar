@@ -19,36 +19,55 @@ export class ConfigService {
   private static themesDir: string | null = null;
 
   static async init() {
+    if (this.configPath) return; // Already initialized
+
     try {
-      const configDir = await appConfigDir();
+      let configDir;
+      try {
+        configDir = await appConfigDir();
+      } catch (e) {
+        console.warn("appConfigDir failed, trying appDataDir", e);
+        const { appDataDir } = await import('@tauri-apps/api/path');
+        configDir = await appDataDir();
+      }
       
       // Ensure config directory exists
-      if (!(await exists(configDir))) {
-        await mkdir(configDir, { recursive: true });
+      try {
+        if (!(await exists(configDir))) {
+          await mkdir(configDir, { recursive: true });
+        }
+      } catch (e) {
+        console.error("Failed to create config directory", e);
       }
 
       this.configPath = await join(configDir, 'settings.json');
       this.themesDir = await join(configDir, 'themes');
 
       // Ensure themes directory exists
-      if (!(await exists(this.themesDir))) {
-        await mkdir(this.themesDir, { recursive: true });
+      try {
+        if (!(await exists(this.themesDir))) {
+          await mkdir(this.themesDir, { recursive: true });
+        }
+      } catch (e) {
+        console.error("Failed to create themes directory", e);
       }
     } catch (e) {
-      console.error("Failed to initialize config paths", e);
+      console.error("Critical failure in ConfigService.init", e);
     }
   }
 
   static async loadSettings(defaultSettings: Settings): Promise<Settings> {
-    if (!this.configPath) await this.init();
+    await this.init();
     
-    try {
-      if (await exists(this.configPath!)) {
-        const content = await readTextFile(this.configPath!);
-        return JSON.parse(content);
+    if (this.configPath) {
+      try {
+        if (await exists(this.configPath)) {
+          const content = await readTextFile(this.configPath);
+          return JSON.parse(content);
+        }
+      } catch (e) {
+        console.error("Failed to load settings from file", e);
       }
-    } catch (e) {
-      console.error("Failed to load settings from file", e);
     }
 
     // Fallback to localStorage for migration

@@ -12,9 +12,20 @@
     "core:event:default",
     "dialog:default",
     "fs:default",
+    "fs:allow-exists",
+    "fs:allow-mkdir",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
-    "fs:allow-exists",
-    "fs:scope-home-recursive"
+    "fs:scope-appconfig-recursive",
+    "fs:scope-appdata-recursive",
+    "fs:scope-home-recursive",
+    "core:window:allow-set-title",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-close",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging"
   ]
 }
