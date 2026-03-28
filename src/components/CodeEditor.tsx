@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import { AppTheme } from '../theme/defaults';
 
@@ -10,47 +10,77 @@ interface CodeEditorProps {
   tabSize: number;
   highlightedLine?: number | null;
   onMount?: (editor: any) => void;
+  activeFileId: string;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ 
+const CodeEditor: React.FC<CodeEditorProps> = React.memo(({ 
   onCodeChange, 
   initialCode = '', 
   theme,
   fontSize,
   tabSize,
   highlightedLine = null,
-  onMount
+  onMount,
+  activeFileId
 }) => {
   const monaco = useMonaco();
-  const editorRef = useRef<any>(null);
+  const [editor, setEditor] = useState<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const [code, setCode] = useState(initialCode);
 
-  // Sync Dynamic Theme
+  // Sync content when active file changes
   useEffect(() => {
-    if (monaco) {
-      monaco.editor.defineTheme('dynamic-theme', {
-        base: theme.type === 'dark' ? 'vs-dark' : 'vs',
-        inherit: true,
-        rules: theme.editor.tokens.map(t => ({
-          token: t.token,
-          foreground: t.foreground,
-          fontStyle: t.fontStyle
-        })),
-        colors: {
-          'editor.background': theme.editor.background,
-          'editor.foreground': theme.editor.foreground,
-        },
-      });
-      monaco.editor.setTheme('dynamic-theme');
+    setCode(initialCode);
+  }, [activeFileId]);
+
+  // Apply Theme
+  const applyTheme = useCallback((monacoInstance: any, themeObj: AppTheme) => {
+    const themeName = `dynamic-theme-${themeObj.name.replace(/\s+/g, '-')}`;
+    monacoInstance.editor.defineTheme(themeName, {
+      base: themeObj.type === 'dark' ? 'vs-dark' : 'vs',
+      inherit: true,
+      rules: themeObj.editor.tokens.map(t => ({
+        token: t.token,
+        foreground: t.foreground,
+        fontStyle: t.fontStyle
+      })),
+      colors: {
+        'editor.background': themeObj.editor.background,
+        'editor.foreground': themeObj.editor.foreground,
+      },
+    });
+    monacoInstance.editor.setTheme(themeName);
+  }, []);
+
+  // Sync Dynamic Theme when theme changes
+  useEffect(() => {
+    if (monaco && theme) {
+      applyTheme(monaco, theme);
     }
-  }, [theme, monaco]);
+  }, [theme, monaco, applyTheme]);
+
+  // Handle resizing manually for better performance
+  useEffect(() => {
+    if (editor) {
+      const resizeObserver = new ResizeObserver(() => {
+        editor.layout();
+      });
+      
+      const editorElement = document.querySelector('.monaco-editor');
+      if (editorElement?.parentElement) {
+        resizeObserver.observe(editorElement.parentElement);
+      }
+      
+      // Initial layout call to prevent blank editor
+      setTimeout(() => editor.layout(), 50);
+      
+      return () => resizeObserver.disconnect();
+    }
+  }, [editor]);
 
   // Sync Highlighted Line
   useEffect(() => {
-    if (monaco && editorRef.current) {
-      const editor = editorRef.current;
-      
+    if (monaco && editor) {
       // Clear old decorations
       decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
 
@@ -71,11 +101,14 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         editor.revealLineInCenterIfOutsideViewport(highlightedLine);
       }
     }
-  }, [highlightedLine, monaco]);
+  }, [highlightedLine, monaco, editor]);
 
-  function handleEditorDidMount(editor: any, monacoInstance: any) {
-    editorRef.current = editor;
-    if (onMount) onMount(editor);
+  function handleEditorDidMount(editorInstance: any, monacoInstance: any) {
+    setEditor(editorInstance);
+    if (onMount) onMount(editorInstance);
+    
+    // Apply theme immediately on mount
+    applyTheme(monacoInstance, theme);
     
     // Register MIPS language if not already registered
     if (!monacoInstance.languages.getLanguages().some((l: any) => l.id === 'mips')) {
@@ -104,22 +137,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         surroundingPairs: [{ open: '(', close: ')' }],
       });
     }
-
-    // Apply initial theme
-    monacoInstance.editor.defineTheme('dynamic-theme', {
-      base: theme.type === 'dark' ? 'vs-dark' : 'vs',
-      inherit: true,
-      rules: theme.editor.tokens.map(t => ({
-        token: t.token,
-        foreground: t.foreground,
-        fontStyle: t.fontStyle
-      })),
-      colors: {
-        'editor.background': theme.editor.background,
-        'editor.foreground': theme.editor.foreground,
-      },
-    });
-    monacoInstance.editor.setTheme('dynamic-theme');
   }
 
   function handleEditorChange(value: string | undefined) {
@@ -154,16 +171,23 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           tabSize: tabSize,
           wordWrap: 'on',
           scrollBeyondLastLine: false,
-          automaticLayout: true,
+          automaticLayout: false,
           padding: { top: 10, bottom: 10 },
           glyphMargin: false,
           lineNumbersMinChars: 3,
           lineDecorationsWidth: 20,
           folding: false,
+          renderLineHighlight: 'all',
+          scrollbar: {
+            vertical: 'visible',
+            horizontal: 'auto',
+            useShadows: false,
+            verticalScrollbarSize: 10,
+          }
         }}
       />
     </>
   );
-};
+});
 
 export default CodeEditor;

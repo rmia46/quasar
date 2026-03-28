@@ -4,7 +4,7 @@ interface MemoryViewProps {
   memory: number[];
 }
 
-const MemoryView: React.FC<MemoryViewProps> = ({ memory }) => {
+const MemoryView: React.FC<MemoryViewProps> = React.memo(({ memory }) => {
   // Group memory into 4-byte words
   const words: number[][] = [];
   for (let i = 0; i < memory.length; i += 4) {
@@ -14,7 +14,7 @@ const MemoryView: React.FC<MemoryViewProps> = ({ memory }) => {
   return (
     <div className="flex flex-col h-full bg-[var(--app-background)] rounded-lg shadow-sm overflow-hidden border border-[var(--border)]">
       <div className="bg-[var(--toolbar-background)] px-4 py-2 border-b border-[var(--border)]">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--app-foreground)] opacity-70">Memory (0x0000 - 0x0100)</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--app-foreground)] opacity-70">Memory (0x0000 - 0x0080)</h3>
       </div>
       <div className="flex-1 overflow-y-auto p-2 font-mono text-xs">
         <table className="w-full text-left">
@@ -40,6 +40,6 @@ const MemoryView: React.FC<MemoryViewProps> = ({ memory }) => {
       </div>
     </div>
   );
-};
+});
 
 export default MemoryView;

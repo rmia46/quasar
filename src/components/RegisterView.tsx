@@ -15,7 +15,7 @@ const REGISTER_NAMES = [
   '$t8', '$t9', '$k0', '$k1', '$gp', '$sp', '$fp', '$ra'
 ];
 
-const RegisterView: React.FC<RegisterViewProps> = ({ registers, changedIndices, hi, lo, hiLoChanged }) => {
+const RegisterView: React.FC<RegisterViewProps> = React.memo(({ registers, changedIndices, hi, lo, hiLoChanged }) => {
   return (
     <div className="flex flex-col h-full bg-[var(--app-background)] rounded-lg shadow-sm overflow-hidden border border-[var(--border)]">
       <div className="bg-[var(--toolbar-background)] px-4 py-2 border-b border-[var(--border)] shrink-0">
@@ -87,6 +87,6 @@ const RegisterView: React.FC<RegisterViewProps> = ({ registers, changedIndices, 
       </div>
     </div>
   );
-};
+});
 
 export default RegisterView;

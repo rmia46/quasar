@@ -16,7 +16,7 @@ interface ParsedLine {
   timestamp: string;
 }
 
-const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height }) => {
+const Console: React.FC<ConsoleProps> = React.memo(({ output, isCollapsed, onToggle, height }) => {
   const [copied, setCopied] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -164,7 +164,7 @@ const Console: React.FC<ConsoleProps> = ({ output, isCollapsed, onToggle, height
       )}
     </div>
   );
-};
+});
 
 const ChevronRight = ({ size, className }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>

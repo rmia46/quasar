@@ -367,7 +367,7 @@ impl MipsEngine {
             lo: self.registers.lo,
             pc: self.pc * 4,
             current_line,
-            memory_sample: self.memory.get_sample(256),
+            memory_sample: self.memory.get_sample(128),
             message,
         }
     }

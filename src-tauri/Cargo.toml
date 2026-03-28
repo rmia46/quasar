@@ -5,7 +5,12 @@ description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+panic = "abort" # Reduces binary size by removing unwinding code
+codegen-units = 1 # Better optimization across the entire crate
+lto = true # Link Time Optimization for maximum performance and size reduction
+opt-level = "z" # Optimize for binary size
+strip = true # Automatically strip symbols from the binary
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary

@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Minus,
   Square,
-  Copy
+  Copy,
+  ChevronLeft
 } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import RegisterView from './components/RegisterView';
@@ -72,6 +73,31 @@ function App() {
   const [isMaximized, setIsMaximized] = useState(false);
   const editorRef = useRef<any>(null);
   const untitledCounter = useRef(1);
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const [showTabArrows, setShowTabArrows] = useState(false);
+
+  const checkTabOverflow = useCallback(() => {
+    if (tabBarRef.current) {
+      const { scrollWidth, clientWidth } = tabBarRef.current;
+      setShowTabArrows(scrollWidth > clientWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkTabOverflow();
+    window.addEventListener('resize', checkTabOverflow);
+    return () => window.removeEventListener('resize', checkTabOverflow);
+  }, [openFiles, checkTabOverflow]);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabBarRef.current) {
+      const scrollAmount = 200;
+      tabBarRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Disable context menu
   useEffect(() => {
@@ -159,7 +185,7 @@ function App() {
     lo: 0,
     pc: 0,
     current_line: null,
-    memory_sample: new Array(256).fill(0),
+    memory_sample: new Array(128).fill(0),
     message: ''
   });
 
@@ -175,6 +201,7 @@ function App() {
       }
     });
     setChangedIndices(changed);
+    
     setHiLoChanged({
       hi: newState.hi !== state.hi,
       lo: newState.lo !== state.lo
@@ -558,38 +585,63 @@ function App() {
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div className="flex-1 overflow-hidden relative border-r border-[var(--border)] flex flex-col">
              {/* Tab Bar */}
-             <div className="h-9 bg-[var(--sidebar-background)] flex items-center border-b border-[var(--border)] overflow-x-auto no-scrollbar">
-                {openFiles.map(file => (
-                  <div 
-                    key={file.id}
-                    onClick={() => setActiveFileId(file.id)}
-                    className={`
-                      flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-[var(--border)] transition-colors cursor-pointer min-w-[120px] max-w-[200px]
-                      ${activeFileId === file.id 
-                        ? 'bg-[var(--tab-active)] text-[var(--app-foreground)]' 
-                        : 'bg-[var(--tab-inactive)] text-[var(--app-foreground)] opacity-50 hover:opacity-100'}
-                    `}
+             <div className="h-9 bg-[var(--sidebar-background)] flex items-center border-b border-[var(--border)] group/tabbar">
+                {showTabArrows && (
+                  <button 
+                    onClick={() => scrollTabs('left')}
+                    className="h-full px-1.5 flex items-center justify-center text-[var(--app-foreground)] opacity-40 hover:opacity-100 hover:bg-[var(--tab-active)] transition-all border-r border-[var(--border)] z-10 bg-[var(--sidebar-background)]"
                   >
-                      <Code size={14} className={file.isModified ? 'text-blue-500' : 'opacity-50'} />
-                      <span className="truncate flex-1">{file.name}{file.isModified ? '*' : ''}</span>
-                      <button 
-                        className="ml-1 p-0.5 hover:bg-[var(--app-background)] opacity-50 hover:opacity-100 rounded-sm transition-colors group"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeFile(file.id);
-                        }}
-                      >
-                        {file.isModified ? (
-                          <Circle size={8} fill="currentColor" className="text-blue-500" />
-                        ) : (
-                          <X size={12} className="group-hover:text-red-500" />
-                        )}
-                      </button>
-                  </div>
-                ))}
+                    <ChevronLeft size={14} />
+                  </button>
+                )}
+                
+                <div 
+                  ref={tabBarRef}
+                  className="flex-1 flex items-center overflow-x-auto no-scrollbar h-full scroll-smooth"
+                >
+                  {openFiles.map(file => (
+                    <div 
+                      key={file.id}
+                      onClick={() => setActiveFileId(file.id)}
+                      className={`
+                        flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-[var(--border)] transition-colors cursor-pointer min-w-[140px] max-w-[200px] shrink-0
+                        ${activeFileId === file.id 
+                          ? 'bg-[var(--tab-active)] text-[var(--app-foreground)]' 
+                          : 'bg-[var(--tab-inactive)] text-[var(--app-foreground)] opacity-50 hover:opacity-100'}
+                      `}
+                    >
+                        <Code size={14} className={file.isModified ? 'text-blue-500' : 'opacity-50'} />
+                        <span className="truncate flex-1">{file.name}{file.isModified ? '*' : ''}</span>
+                        <button 
+                          className="ml-1 p-0.5 hover:bg-[var(--app-background)] opacity-50 hover:opacity-100 rounded-sm transition-colors group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            closeFile(file.id);
+                          }}
+                        >
+                          {file.isModified ? (
+                            <Circle size={8} fill="currentColor" className="text-blue-500" />
+                          ) : (
+                            <X size={12} className="group-hover:text-red-500" />
+                          )}
+                        </button>
+                    </div>
+                  ))}
+                </div>
+
+                {showTabArrows && (
+                  <button 
+                    onClick={() => scrollTabs('right')}
+                    className="h-full px-1.5 flex items-center justify-center text-[var(--app-foreground)] opacity-40 hover:opacity-100 hover:bg-[var(--tab-active)] transition-all border-l border-[var(--border)] z-10 bg-[var(--sidebar-background)]"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                )}
+
                 <button 
                   onClick={handleNewFile}
-                  className="px-3 h-full flex items-center justify-center text-[var(--app-foreground)] opacity-50 hover:opacity-100 hover:bg-[var(--tab-active)] transition-colors"
+                  title="New File (Ctrl+N)"
+                  className="px-3 h-full flex items-center justify-center text-[var(--app-foreground)] opacity-50 hover:opacity-100 hover:bg-[var(--tab-active)] transition-colors border-l border-[var(--border)] shrink-0 bg-[var(--sidebar-background)]"
                 >
                   <X size={14} className="rotate-45" />
                 </button>
@@ -597,7 +649,7 @@ function App() {
              <div className="flex-1 overflow-hidden">
                 {openFiles.length > 0 ? (
                   <CodeEditor 
-                      key={activeFileId}
+                      activeFileId={activeFileId || ''}
                       onMount={(editor) => { editorRef.current = editor; }}
                       onCodeChange={handleCodeChange} 
                       initialCode={activeFile?.code || ''} 
