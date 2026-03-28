@@ -59,22 +59,56 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
           <div className="flex-1 p-8 overflow-y-auto space-y-6 text-[var(--app-foreground)] leading-relaxed custom-scrollbar">
             
             {activeTab === 'intro' && (
-              <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
                 <section className="space-y-3">
                   <h4 className="text-lg font-bold text-blue-500">Welcome to Quasar</h4>
-                  <p className="text-sm opacity-70">
+                  <p className="text-sm opacity-70 leading-relaxed">
                     Quasar is a modern, lightweight MIPS32 R2000 Integrated Development Environment (IDE). 
                     It allows you to write, debug, and simulate MIPS assembly code with real-time feedback.
                   </p>
                 </section>
-                <section className="space-y-3">
-                  <h5 className="text-xs font-bold uppercase tracking-widest opacity-40">How it works</h5>
-                  <ul className="space-y-2 text-sm opacity-70 list-disc pl-4">
-                    <li>Write your code in the main editor pane.</li>
-                    <li>Use the <span className="text-green-500 font-bold">Run</span> button to execute the entire program.</li>
-                    <li>Use the <span className="text-blue-500 font-bold">Step</span> button to execute one instruction at a time.</li>
-                    <li>Watch the <span className="font-bold underline">Registers</span> and <span className="font-bold underline">Memory</span> panes on the right to see state changes.</li>
-                  </ul>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <section className="space-y-3">
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">1. Preparation</h5>
+                    <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
+                      <li><span className="font-bold text-[var(--app-foreground)]">Write:</span> Type your MIPS assembly directly in the editor.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Save:</span> Files must be saved before running. Use <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">Ctrl+S</span> or enable "Auto-Save before Run" in Settings.</li>
+                    </ul>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">2. Stepping Loop</h5>
+                    <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
+                      <li><span className="font-bold text-[var(--app-foreground)]">Trigger:</span> Use the <span className="text-blue-500 font-bold">Step</span> button or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">F10</span>.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Highlight:</span> A blue bar shows the line currently being executed.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Glow:</span> Modified registers will <span className="text-orange-500 font-bold">glow orange</span> in the sidebar.</li>
+                    </ul>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">3. Branching</h5>
+                    <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
+                      <li>Logic like <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">beq</span>, <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">bne</span>, or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">j</span> will cause the blue highlight to jump to the target label target.</li>
+                    </ul>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">4. Resetting</h5>
+                    <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
+                      <li>Click <span className="text-orange-500 font-bold">Reset</span> or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">Ctrl+R</span> to clear registers, memory, and move back to line 1.</li>
+                    </ul>
+                  </section>
+                </div>
+
+                <section className="p-4 bg-blue-600/5 border border-blue-600/20 rounded-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <Book size={48} />
+                  </div>
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 mb-2">Pro-Tip</h5>
+                  <p className="text-xs opacity-70 leading-relaxed">
+                    If you are stepping through a long loop and get bored, you can click <span className="font-bold text-green-500">Run (F5)</span> at any point to execute the rest of the program at full speed!
+                  </p>
                 </section>
               </div>
             )}

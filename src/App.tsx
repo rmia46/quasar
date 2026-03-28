@@ -512,7 +512,7 @@ function App() {
           <ToolbarButton icon={<Undo size={18} />} label="Undo" onClick={handleUndo} />
           <ToolbarButton icon={<Redo size={18} />} label="Redo" onClick={handleRedo} />
           <div className="w-px h-6 bg-[var(--border)] mx-3" />
-          <ToolbarButton icon={<Play size={18} className="text-green-500 fill-green-500/10" />} label="Run" onClick={handleRun} primary />
+          <ToolbarButton icon={<Play size={18} className="text-green-500 fill-green-500/10" />} label="Run" onClick={handleRun} />
           <ToolbarButton icon={<StepForward size={18} className="text-blue-500" />} label="Step" onClick={handleStep} />
           <ToolbarButton icon={<RotateCcw size={18} className="text-orange-500" />} label="Reset" onClick={handleReset} />
         </div>
