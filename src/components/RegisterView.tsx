@@ -13,20 +13,34 @@ const REGISTER_NAMES = [
 
 const RegisterView: React.FC<RegisterViewProps> = ({ registers }) => {
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#111111] rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-[#2a2a2a]">
-      <div className="bg-gray-50 dark:bg-[#1a1a1a] px-4 py-2 border-b border-gray-200 dark:border-[#2a2a2a]">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-gray-400">Registers</h3>
+    <div className="flex flex-col h-full bg-[var(--app-background)] rounded-lg shadow-sm overflow-hidden border border-[var(--border)]">
+      <div className="bg-[var(--toolbar-background)] px-4 py-2 border-b border-[var(--border)]">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--app-foreground)] opacity-70">Registers</h3>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-          {REGISTER_NAMES.map((name, index) => (
-            <div key={name} className="flex items-center justify-between py-1 px-2 border-b border-gray-100 dark:border-[#1e1e1e] last:border-0">
-              <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-medium">{name}</span>
-              <span className="text-xs font-mono text-gray-800 dark:text-gray-300">
-                {registers[index]?.toString(16).padStart(8, '0').toUpperCase() || '00000000'}
-              </span>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 gap-1">
+          <div className="flex items-center text-[10px] font-bold uppercase tracking-widest text-[var(--app-foreground)] opacity-40 px-2 py-1 border-b border-[var(--border)]">
+            <span className="w-16">Name</span>
+            <span className="flex-1 text-center">Hex</span>
+            <span className="w-20 text-right">Decimal</span>
+          </div>
+          {REGISTER_NAMES.map((name, index) => {
+            const val = registers[index] || 0;
+            const hex = val.toString(16).padStart(8, '0').toUpperCase();
+            const dec = (val | 0); // Convert to signed 32-bit integer
+            
+            return (
+              <div key={name} className="flex items-center justify-between py-1 px-2 border-b border-[var(--border)] last:border-0 hover:bg-[var(--tab-active)] transition-colors">
+                <span className="w-16 text-xs font-mono text-blue-600 dark:text-blue-400 font-medium">{name}</span>
+                <span className="flex-1 text-center text-xs font-mono text-[var(--app-foreground)] opacity-80">
+                  0x{hex}
+                </span>
+                <span className={`w-20 text-right text-[11px] font-mono ${dec < 0 ? 'text-red-500' : 'text-green-500'} opacity-90`}>
+                  {dec}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

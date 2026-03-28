@@ -1,28 +1,48 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
+import { AppTheme } from '../theme/defaults';
 
 interface CodeEditorProps {
   onCodeChange: (code: string) => void;
   initialCode?: string;
-  theme?: 'vs-dark' | 'light';
+  theme: AppTheme;
+  fontSize: number;
+  tabSize: number;
   highlightedLine?: number | null;
+  onMount?: (editor: any) => void;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ 
   onCodeChange, 
   initialCode = '', 
-  theme = 'vs-dark',
-  highlightedLine = null
+  theme,
+  fontSize,
+  tabSize,
+  highlightedLine = null,
+  onMount
 }) => {
   const monaco = useMonaco();
   const editorRef = useRef<any>(null);
   const decorationsRef = useRef<string[]>([]);
   const [code, setCode] = useState(initialCode);
 
-  // Sync theme
+  // Sync Dynamic Theme
   useEffect(() => {
     if (monaco) {
-      monaco.editor.setTheme(theme === 'vs-dark' ? 'mips-dark' : 'mips-light');
+      monaco.editor.defineTheme('dynamic-theme', {
+        base: theme.type === 'dark' ? 'vs-dark' : 'vs',
+        inherit: true,
+        rules: theme.editor.tokens.map(t => ({
+          token: t.token,
+          foreground: t.foreground,
+          fontStyle: t.fontStyle
+        })),
+        colors: {
+          'editor.background': theme.editor.background,
+          'editor.foreground': theme.editor.foreground,
+        },
+      });
+      monaco.editor.setTheme('dynamic-theme');
     }
   }, [theme, monaco]);
 
@@ -55,70 +75,51 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 
   function handleEditorDidMount(editor: any, monacoInstance: any) {
     editorRef.current = editor;
+    if (onMount) onMount(editor);
     
-    // Register MIPS language
-    monacoInstance.languages.register({ id: 'mips' });
+    // Register MIPS language if not already registered
+    if (!monacoInstance.languages.getLanguages().some((l: any) => l.id === 'mips')) {
+      monacoInstance.languages.register({ id: 'mips' });
 
-    monacoInstance.languages.setMonarchTokensProvider('mips', {
-      tokenizer: {
-        root: [
-          [/;.*$/, 'comment'],
-          [/#.*$/, 'comment'],
-          [/\$[svat][0-9]|\$[raesp]|\$[zero]/, 'variable'],
-          [/\$[0-9]{1,2}/, 'variable'],
-          [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|jr|jal|j|beq|bne|lw|sw|lb|sb|lh|sh|li|syscall|move|nop|break|lui|xori)\b/, 'keyword'],
-          [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
-          [/\b\d+\b/, 'number'],
-          [/0x[0-9a-fA-F]+\b/, 'number'],
-          [/".*?"/, 'string'],
-        ],
-      },
-    });
+      monacoInstance.languages.setMonarchTokensProvider('mips', {
+        tokenizer: {
+          root: [
+            [/;.*$/, 'comment'],
+            [/#.*$/, 'comment'],
+            [/\$[svat][0-9]|\$[raesp]|\$[zero]/, 'variable'],
+            [/\$[0-9]{1,2}/, 'variable'],
+            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|jr|jal|j|beq|bne|lw|sw|lb|sb|lh|sh|li|syscall|move|nop|break|lui|xori)\b/, 'keyword'],
+            [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
+            [/\b\d+\b/, 'number'],
+            [/0x[0-9a-fA-F]+\b/, 'number'],
+            [/".*?"/, 'string'],
+          ],
+        },
+      });
 
-    monacoInstance.languages.setLanguageConfiguration('mips', {
-      comments: { lineComment: '#' },
-      brackets: [['(', ')']],
-      autoClosingPairs: [{ open: '(', close: ')' }],
-      surroundingPairs: [{ open: '(', close: ')' }],
-    });
+      monacoInstance.languages.setLanguageConfiguration('mips', {
+        comments: { lineComment: '#' },
+        brackets: [['(', ')']],
+        autoClosingPairs: [{ open: '(', close: ')' }],
+        surroundingPairs: [{ open: '(', close: ')' }],
+      });
+    }
 
-    // Dark Theme definition
-    monacoInstance.editor.defineTheme('mips-dark', {
-      base: 'vs-dark',
+    // Apply initial theme
+    monacoInstance.editor.defineTheme('dynamic-theme', {
+      base: theme.type === 'dark' ? 'vs-dark' : 'vs',
       inherit: true,
-      rules: [
-        { token: 'comment', foreground: '6A9955' },
-        { token: 'variable', foreground: '4FC1FF' },
-        { token: 'keyword', foreground: 'C586C0' },
-        { token: 'tag', foreground: 'FFD700' },
-        { token: 'number', foreground: 'B5CEA8' },
-        { token: 'string', foreground: 'CE9178' },
-      ],
+      rules: theme.editor.tokens.map(t => ({
+        token: t.token,
+        foreground: t.foreground,
+        fontStyle: t.fontStyle
+      })),
       colors: {
-        'editor.background': '#1e1e1e',
-        'editor.foreground': '#D4D4D4',
+        'editor.background': theme.editor.background,
+        'editor.foreground': theme.editor.foreground,
       },
     });
-
-    // Light Theme definition
-    monacoInstance.editor.defineTheme('mips-light', {
-      base: 'vs',
-      inherit: true,
-      rules: [
-        { token: 'comment', foreground: '008000' },
-        { token: 'variable', foreground: '0000FF' },
-        { token: 'keyword', foreground: 'AF00DB' },
-        { token: 'tag', foreground: '808000' },
-        { token: 'number', foreground: '098677' },
-        { token: 'string', foreground: 'A31515' },
-      ],
-      colors: {
-        'editor.background': '#FFFFFF',
-        'editor.foreground': '#000000',
-      },
-    });
-
-    monacoInstance.editor.setTheme(theme === 'vs-dark' ? 'mips-dark' : 'mips-light');
+    monacoInstance.editor.setTheme('dynamic-theme');
   }
 
   function handleEditorChange(value: string | undefined) {
@@ -143,13 +144,14 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       <Editor
         height="100%"
         language="mips"
-        theme={theme === 'vs-dark' ? 'mips-dark' : 'mips-light'}
+        theme="dynamic-theme"
         value={code}
         onMount={handleEditorDidMount}
         onChange={handleEditorChange}
         options={{
           minimap: { enabled: false },
-          fontSize: 14,
+          fontSize: fontSize,
+          tabSize: tabSize,
           wordWrap: 'on',
           scrollBeyondLastLine: false,
           automaticLayout: true,

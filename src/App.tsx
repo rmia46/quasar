@@ -3,7 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-import { appDataDir, join } from '@tauri-apps/api/path';
 import { 
   Play, 
   RotateCcw, 
@@ -17,12 +16,20 @@ import {
   ChevronRight,
   Monitor,
   X,
-  Circle
+  Circle,
+  Undo,
+  Redo,
+  HelpCircle
 } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import RegisterView from './components/RegisterView';
 import MemoryView from './components/MemoryView';
 import Console from './components/Console';
+import SettingsDialog from './components/SettingsDialog';
+import HelpDialog from './components/HelpDialog';
+import { QUASAR_DARK, QUASAR_LIGHT } from './theme/defaults';
+import { applyTheme } from './theme/themeApplier';
+import { ConfigService, Settings, DEFAULT_SETTINGS } from './services/configService';
 
 interface SimulatorState {
   registers: number[];
@@ -50,12 +57,53 @@ interface OpenFile {
 }
 
 function App() {
-  const [darkMode, setDarkMode] = useState(true);
   const [openFiles, setOpenFiles] = useState<OpenFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [consoleHeight, setConsoleHeight] = useState(180);
   const [isConsoleCollapsed, setIsConsoleCollapsed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const editorRef = useRef<any>(null);
+
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS(QUASAR_DARK));
+
+  // Initialize Settings from File System
+  useEffect(() => {
+    ConfigService.loadSettings(DEFAULT_SETTINGS(QUASAR_DARK)).then(loaded => {
+      setSettings(loaded);
+    });
+  }, []);
+
+  // Apply and Persist theme on change
+  useEffect(() => {
+    applyTheme(settings.theme);
+    ConfigService.saveSettings(settings);
+  }, [settings]);
+
+  const handleLoadTheme = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: 'Quasar Theme', extensions: ['json', 'qtheme'] }]
+      });
+      if (selected && typeof selected === 'string') {
+        const content = await readTextFile(selected);
+        const theme = JSON.parse(content);
+        // Basic validation
+        if (theme.name && theme.colors && theme.editor) {
+          setSettings(prev => ({ ...prev, theme }));
+        } else {
+          alert("Invalid theme file format");
+        }
+      }
+    } catch (err) {
+      console.error("Load Theme Error:", err);
+    }
+  };
+
+  const handleUndo = () => editorRef.current?.trigger('keyboard', 'undo', {});
+  const handleRedo = () => editorRef.current?.trigger('keyboard', 'redo', {});
 
   const [state, setState] = useState<SimulatorState>({
     registers: new Array(32).fill(0),
@@ -87,27 +135,6 @@ function App() {
     }
   }, [openFiles.length, handleNewFile]);
 
-  const updateTheme = useCallback(async () => {
-    if (!isTauri()) return;
-    try {
-      const win = getCurrentWindow();
-      const theme = await win.theme();
-      setDarkMode(theme === 'dark');
-      return await win.onThemeChanged(({ payload: theme }) => {
-        setDarkMode(theme === 'dark');
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
-
-  useEffect(() => {
-    let unlisten: any;
-    updateTheme().then(u => unlisten = u);
-    return () => { if (unlisten) unlisten(); };
-  }, [updateTheme]);
-
-  // Get current file data based on active file ID
   const activeFile = openFiles.find(f => f.id === activeFileId);
   const isModified = activeFile?.isModified || false;
 
@@ -306,10 +333,10 @@ function App() {
   }, [activeFileName, isModified]);
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden ${darkMode ? 'dark' : ''} ${isResizing ? 'cursor-row-resize select-none' : ''}`}>
+    <div className={`flex flex-col h-screen overflow-hidden ${isResizing ? 'cursor-row-resize select-none' : ''}`}>
       
       {/* 1. Menu Bar */}
-      <nav className="h-7 bg-[#f3f3f3] dark:bg-[#2d2d2d] border-b border-gray-300 dark:border-[#1e1e1e] flex items-center px-3 gap-1 transition-colors duration-200 shrink-0">
+      <nav className="h-7 bg-[var(--toolbar-background)] border-b border-[var(--border)] flex items-center px-3 gap-1 transition-colors duration-200 shrink-0">
         <MenuButton label="File" items={[
           { label: 'New File', onClick: handleNewFile },
           { label: 'Open File...', onClick: handleOpenFile },
@@ -324,51 +351,65 @@ function App() {
           { label: 'Step Forward', onClick: handleStep },
           { label: 'Reset Engine', onClick: handleReset },
         ]} />
-        <MenuButton label="Help" items={[{ label: 'About Quasar' }]} />
+        <MenuButton label="Settings" items={[
+          { label: 'Preferences...', onClick: () => setIsSettingsOpen(true) },
+          { separator: true },
+          { label: 'Load Theme...', onClick: handleLoadTheme },
+          { label: 'Theme: Quasar Dark', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_DARK })) },
+          { label: 'Theme: Quasar Light', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_LIGHT })) },
+        ]} />
+        <MenuButton label="Help" items={[
+          { label: 'Documentation', onClick: () => setIsHelpOpen(true) },
+          { label: 'About Quasar' }
+        ]} />
       </nav>
 
       {/* 2. Top Toolbar */}
-      <div className="h-12 bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-[#2a2a2a] flex items-center justify-between px-4 shrink-0 transition-colors duration-200 shadow-sm z-20">
+      <div className="h-12 bg-[var(--app-background)] border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 transition-colors duration-200 shadow-sm z-20">
         <div className="flex items-center gap-1">
           <ToolbarButton icon={<FileText size={16} />} label="New" onClick={handleNewFile} />
           <ToolbarButton icon={<FolderOpen size={16} />} label="Open" onClick={handleOpenFile} />
           <ToolbarButton icon={<Save size={16} />} label="Save" onClick={handleSaveFile} />
-          <div className="w-px h-6 bg-gray-200 dark:bg-[#333] mx-2" />
+          <div className="w-px h-6 bg-[var(--border)] mx-2" />
+          <ToolbarButton icon={<Undo size={16} />} label="Undo" onClick={handleUndo} />
+          <ToolbarButton icon={<Redo size={16} />} label="Redo" onClick={handleRedo} />
+          <div className="w-px h-6 bg-[var(--border)] mx-2" />
           <ToolbarButton icon={<Play size={16} className="text-green-600 fill-green-600/20" />} label="Run" onClick={handleRun} primary />
           <ToolbarButton icon={<StepForward size={16} className="text-blue-500" />} label="Step" onClick={handleStep} />
           <ToolbarButton icon={<RotateCcw size={16} className="text-orange-500" />} label="Reset" onClick={handleReset} />
         </div>
 
         <div className="flex items-center gap-4 mr-2">
+            <ToolbarButton icon={<HelpCircle size={16} />} label="Help" onClick={() => setIsHelpOpen(true)} />
             <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                 <Cpu size={14} />
                 MIPS32 R2000
             </div>
-            <Info size={16} className="text-gray-400 cursor-help" />
+            <Info size={16} className="text-[var(--app-foreground)] opacity-50 cursor-help" />
         </div>
       </div>
 
       {/* 3. Main Workspace */}
-      <main className="flex-1 flex overflow-hidden bg-gray-50 dark:bg-[#0d0d0d]">
+      <main className="flex-1 flex overflow-hidden bg-[var(--app-background)] text-[var(--app-foreground)]">
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-hidden relative border-r border-gray-200 dark:border-[#2a2a2a] flex flex-col">
+          <div className="flex-1 overflow-hidden relative border-r border-[var(--border)] flex flex-col">
              {/* Tab Bar */}
-             <div className="h-9 bg-gray-100 dark:bg-[#252526] flex items-center border-b border-gray-200 dark:border-[#1e1e1e] overflow-x-auto no-scrollbar">
+             <div className="h-9 bg-[var(--sidebar-background)] flex items-center border-b border-[var(--border)] overflow-x-auto no-scrollbar">
                 {openFiles.map(file => (
                   <div 
                     key={file.id}
                     onClick={() => setActiveFileId(file.id)}
                     className={`
-                      flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-gray-200 dark:border-[#1e1e1e] transition-colors cursor-pointer min-w-[120px] max-w-[200px]
+                      flex items-center gap-3 text-[11px] font-medium h-full px-4 border-r border-[var(--border)] transition-colors cursor-pointer min-w-[120px] max-w-[200px]
                       ${activeFileId === file.id 
-                        ? (file.isModified ? 'bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-200') 
-                        : 'bg-gray-100 dark:bg-[#2d2d2d] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333]'}
+                        ? 'bg-[var(--tab-active)] text-[var(--app-foreground)]' 
+                        : 'bg-[var(--tab-inactive)] text-[var(--app-foreground)] opacity-50 hover:opacity-100'}
                     `}
                   >
-                      <Code size={14} className={file.isModified ? 'text-blue-500' : 'text-gray-400'} />
+                      <Code size={14} className={file.isModified ? 'text-blue-500' : 'opacity-50'} />
                       <span className="truncate flex-1">{file.name}{file.isModified ? '*' : ''}</span>
                       <button 
-                        className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-sm transition-colors group"
+                        className="ml-1 p-0.5 hover:bg-[var(--app-background)] opacity-50 hover:opacity-100 rounded-sm transition-colors group"
                         onClick={(e) => {
                           e.stopPropagation();
                           closeFile(file.id);
@@ -377,14 +418,14 @@ function App() {
                         {file.isModified ? (
                           <Circle size={8} fill="currentColor" className="text-blue-500" />
                         ) : (
-                          <X size={12} className="text-gray-400 group-hover:text-red-500" />
+                          <X size={12} className="group-hover:text-red-500" />
                         )}
                       </button>
                   </div>
                 ))}
                 <button 
                   onClick={handleNewFile}
-                  className="px-3 h-full flex items-center justify-center text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333] transition-colors"
+                  className="px-3 h-full flex items-center justify-center text-[var(--app-foreground)] opacity-50 hover:opacity-100 hover:bg-[var(--tab-active)] transition-colors"
                 >
                   <X size={14} className="rotate-45" />
                 </button>
@@ -392,22 +433,24 @@ function App() {
              <div className="flex-1 overflow-hidden">
                 <CodeEditor 
                     key={activeFileId}
+                    onMount={(editor) => { editorRef.current = editor; }}
                     onCodeChange={handleCodeChange} 
                     initialCode={activeFile?.code || ''} 
-                    theme={darkMode ? 'vs-dark' : 'light'} 
+                    theme={settings.theme} 
+                    fontSize={settings.fontSize}
+                    tabSize={settings.tabSize}
                     highlightedLine={state.current_line}
                 />
              </div>
           </div>
 
-          <div onMouseDown={startResizing} className="h-1.5 bg-gray-200 dark:bg-[#2a2a2a] hover:bg-blue-500 dark:hover:bg-blue-600 cursor-row-resize flex items-center justify-center transition-colors group z-10">
-            <div className="w-12 h-1 bg-gray-400 dark:bg-[#444] group-hover:bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div onMouseDown={startResizing} className="h-1 bg-[var(--border)] hover:bg-blue-500 cursor-row-resize flex items-center justify-center transition-colors group z-10">
           </div>
 
           <Console output={state.message} isCollapsed={isConsoleCollapsed} onToggle={() => setIsConsoleCollapsed(!isConsoleCollapsed)} height={consoleHeight} />
         </div>
 
-        <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-gray-50 dark:bg-[#0d0d0d] p-4 gap-4 border-l border-gray-200 dark:border-[#2a2a2a]">
+        <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] p-4 gap-4 border-l border-[var(--border)]">
           <div className="flex-1 overflow-hidden">
             <RegisterView registers={state.registers} />
           </div>
@@ -417,7 +460,7 @@ function App() {
         </aside>
       </main>
 
-      <footer className="h-6 bg-blue-600 dark:bg-[#007acc] flex items-center px-4 justify-between shrink-0 text-[10px] font-bold text-white uppercase tracking-wider z-20">
+      <footer className="h-6 bg-blue-600 flex items-center px-4 justify-between shrink-0 text-[10px] font-bold text-white uppercase tracking-wider z-20">
         <div className="flex items-center gap-6">
           <span className="flex items-center gap-1.5"><Monitor size={12} />{isTauri() ? "Hardware Connected" : "Local Emulation Mode"}</span>
           <span className="flex items-center gap-1"><ChevronRight size={12} />PC: 0x{state.pc.toString(16).padStart(8, '0').toUpperCase()}</span>
@@ -427,6 +470,21 @@ function App() {
           <span>MIPS Assembly</span>
         </div>
       </footer>
+
+      {/* Settings Dialog */}
+      {isSettingsOpen && (
+        <SettingsDialog 
+          settings={settings}
+          onUpdate={setSettings}
+          onClose={() => setIsSettingsOpen(false)}
+          onLoadTheme={handleLoadTheme}
+        />
+      )}
+
+      {/* Help Dialog */}
+      {isHelpOpen && (
+        <HelpDialog onClose={() => setIsHelpOpen(false)} />
+      )}
     </div>
   );
 }
@@ -436,18 +494,21 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-      <button className="text-[11px] px-3 py-1 hover:bg-gray-200 dark:hover:bg-[#3e3e3e] rounded text-gray-700 dark:text-gray-300 transition-colors cursor-pointer h-full">
+      <button className="text-[11px] px-3 py-1 hover:bg-[var(--tab-active)] rounded text-[var(--app-foreground)] opacity-80 hover:opacity-100 transition-colors cursor-pointer h-full">
         {label}
       </button>
       {isOpen && (
-        <div className="absolute left-0 top-full w-48 bg-white dark:bg-[#252526] border border-gray-200 dark:border-[#454545] shadow-lg rounded-sm py-1 z-50 animate-in fade-in slide-in-from-top-1">
+        <div className="absolute left-0 top-full w-48 bg-[var(--tab-inactive)] border border-[var(--border)] shadow-lg rounded-sm py-1 z-50 animate-in fade-in slide-in-from-top-1">
           {items.map((item, i) => item.separator ? (
-            <div key={i} className="h-px bg-gray-200 dark:bg-[#454545] my-1 mx-2" />
+            <div key={i} className="h-px bg-[var(--border)] my-1 mx-2" />
           ) : (
             <button
               key={i}
-              onClick={item.onClick}
-              className="w-full text-left px-4 py-1.5 text-[11px] text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+              onClick={() => {
+                item.onClick?.();
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-1.5 text-[11px] text-[var(--app-foreground)] opacity-80 hover:opacity-100 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
             >
               {item.label}
             </button>
@@ -460,7 +521,7 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
 
 function ToolbarButton({ icon, label, onClick, primary = false }: { icon: React.ReactNode; label: string; onClick?: () => void; primary?: boolean; }) {
   return (
-    <button onClick={onClick} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all active:scale-95 cursor-pointer ${primary ? 'hover:bg-gray-100 dark:hover:bg-[#333] font-bold text-gray-800 dark:text-gray-200' : 'hover:bg-gray-100 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-400'}`} title={label}>
+    <button onClick={onClick} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all active:scale-95 cursor-pointer ${primary ? 'hover:bg-[var(--tab-active)] font-bold text-[var(--app-foreground)]' : 'hover:bg-[var(--tab-active)] text-[var(--app-foreground)] opacity-60 hover:opacity-100'}`} title={label}>
       {icon}
       <span className="text-[11px] font-medium hidden md:inline">{label}</span>
     </button>
