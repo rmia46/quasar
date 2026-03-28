@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "quasar",
+  "productName": "Quasar",
   "version": "1.0.0",
   "identifier": "com.anik.tauri-app",
   "build": {
