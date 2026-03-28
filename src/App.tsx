@@ -35,6 +35,8 @@ import { ConfigService, Settings, DEFAULT_SETTINGS } from './services/configServ
 
 interface SimulatorState {
   registers: number[];
+  hi: number;
+  lo: number;
   pc: number;
   current_line: number | null;
   memory_sample: number[];
@@ -153,6 +155,8 @@ function App() {
 
   const [state, setState] = useState<SimulatorState>({
     registers: new Array(32).fill(0),
+    hi: 0,
+    lo: 0,
     pc: 0,
     current_line: null,
     memory_sample: new Array(256).fill(0),
@@ -160,6 +164,7 @@ function App() {
   });
 
   const [changedIndices, setChangedIndices] = useState<number[]>([]);
+  const [hiLoChanged, setHiLoChanged] = useState({ hi: false, lo: false });
   const [consoleOutput, setConsoleOutput] = useState('');
 
   const updateSimulatorState = useCallback((newState: SimulatorState) => {
@@ -170,13 +175,17 @@ function App() {
       }
     });
     setChangedIndices(changed);
+    setHiLoChanged({
+      hi: newState.hi !== state.hi,
+      lo: newState.lo !== state.lo
+    });
     
     if (newState.message) {
       setConsoleOutput(prev => prev + (prev ? '\n' : '') + newState.message);
     }
     
     setState(newState);
-  }, [state.registers]);
+  }, [state.registers, state.hi, state.lo]);
 
   // File Operations
   const handleNewFile = useCallback(async () => {
@@ -376,6 +385,7 @@ function App() {
     try {
       const result = await invoke<SimulatorState>('reset_simulator');
       setChangedIndices([]);
+      setHiLoChanged({ hi: false, lo: false });
       setConsoleOutput('');
       setState(result);
     } catch (err) {
@@ -632,7 +642,7 @@ function App() {
 
         <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] p-4 gap-4 border-l border-[var(--border)]">
           <div className="flex-1 overflow-hidden">
-            <RegisterView registers={state.registers} changedIndices={changedIndices} />
+            <RegisterView registers={state.registers} changedIndices={changedIndices} hi={state.hi} lo={state.lo} hiLoChanged={hiLoChanged} />
           </div>
           <div className="h-72 overflow-hidden">
             <MemoryView memory={state.memory_sample} />

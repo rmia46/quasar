@@ -2,6 +2,8 @@ pub mod registers;
 pub mod memory;
 pub mod instructions;
 pub mod parser;
+#[cfg(test)]
+mod tests;
 
 pub use registers::RegisterFile;
 pub use memory::Memory;
@@ -13,6 +15,8 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SimulatorState {
     pub registers: [u32; 32],
+    pub hi: u32,
+    pub lo: u32,
     pub pc: u32,
     pub current_line: Option<u32>, // The source line number (1-based)
     pub memory_sample: Vec<u8>,
@@ -89,11 +93,20 @@ impl MipsEngine {
         let mut next_pc = self.pc + 1;
 
         match inst {
+            // Arithmetic R-Type
             MipsInstruction::Add { rd, rs, rt } => {
+                let val = (self.registers.read(rs) as i32).wrapping_add(self.registers.read(rt) as i32);
+                self.registers.write(rd, val as u32);
+            },
+            MipsInstruction::Addu { rd, rs, rt } => {
                 let val = self.registers.read(rs).wrapping_add(self.registers.read(rt));
                 self.registers.write(rd, val);
             },
             MipsInstruction::Sub { rd, rs, rt } => {
+                let val = (self.registers.read(rs) as i32).wrapping_sub(self.registers.read(rt) as i32);
+                self.registers.write(rd, val as u32);
+            },
+            MipsInstruction::Subu { rd, rs, rt } => {
                 let val = self.registers.read(rs).wrapping_sub(self.registers.read(rt));
                 self.registers.write(rd, val);
             },
@@ -117,7 +130,72 @@ impl MipsEngine {
                 let val = if (self.registers.read(rs) as i32) < (self.registers.read(rt) as i32) { 1 } else { 0 };
                 self.registers.write(rd, val);
             },
+            MipsInstruction::Sltu { rd, rs, rt } => {
+                let val = if self.registers.read(rs) < self.registers.read(rt) { 1 } else { 0 };
+                self.registers.write(rd, val);
+            },
+
+            // Shifts
+            MipsInstruction::Sll { rd, rt, sa } => {
+                self.registers.write(rd, self.registers.read(rt) << sa);
+            },
+            MipsInstruction::Srl { rd, rt, sa } => {
+                self.registers.write(rd, self.registers.read(rt) >> sa);
+            },
+            MipsInstruction::Sra { rd, rt, sa } => {
+                self.registers.write(rd, ((self.registers.read(rt) as i32) >> sa) as u32);
+            },
+            MipsInstruction::Sllv { rd, rt, rs } => {
+                let sa = self.registers.read(rs) & 0x1F;
+                self.registers.write(rd, self.registers.read(rt) << sa);
+            },
+            MipsInstruction::Srlv { rd, rt, rs } => {
+                let sa = self.registers.read(rs) & 0x1F;
+                self.registers.write(rd, self.registers.read(rt) >> sa);
+            },
+            MipsInstruction::Srav { rd, rt, rs } => {
+                let sa = self.registers.read(rs) & 0x1F;
+                self.registers.write(rd, ((self.registers.read(rt) as i32) >> sa) as u32);
+            },
+
+            // Mult/Div
+            MipsInstruction::Mult { rs, rt } => {
+                let res = (self.registers.read(rs) as i32 as i64) * (self.registers.read(rt) as i32 as i64);
+                self.registers.lo = (res & 0xFFFFFFFF) as u32;
+                self.registers.hi = ((res >> 32) & 0xFFFFFFFF) as u32;
+            },
+            MipsInstruction::Multu { rs, rt } => {
+                let res = (self.registers.read(rs) as u64) * (self.registers.read(rt) as u64);
+                self.registers.lo = (res & 0xFFFFFFFF) as u32;
+                self.registers.hi = ((res >> 32) & 0xFFFFFFFF) as u32;
+            },
+            MipsInstruction::Div { rs, rt } => {
+                let divisor = self.registers.read(rt) as i32;
+                if divisor != 0 {
+                    let dividend = self.registers.read(rs) as i32;
+                    self.registers.lo = (dividend / divisor) as u32;
+                    self.registers.hi = (dividend % divisor) as u32;
+                }
+            },
+            MipsInstruction::Divu { rs, rt } => {
+                let divisor = self.registers.read(rt);
+                if divisor != 0 {
+                    let dividend = self.registers.read(rs);
+                    self.registers.lo = dividend / divisor;
+                    self.registers.hi = dividend % divisor;
+                }
+            },
+            MipsInstruction::Mfhi { rd } => self.registers.write(rd, self.registers.hi),
+            MipsInstruction::Mflo { rd } => self.registers.write(rd, self.registers.lo),
+            MipsInstruction::Mthi { rs } => self.registers.hi = self.registers.read(rs),
+            MipsInstruction::Mtlo { rs } => self.registers.lo = self.registers.read(rs),
+
+            // Immediate
             MipsInstruction::Addi { rt, rs, imm } => {
+                let val = (self.registers.read(rs) as i32).wrapping_add(imm);
+                self.registers.write(rt, val as u32);
+            },
+            MipsInstruction::Addiu { rt, rs, imm } => {
                 let val = self.registers.read(rs).wrapping_add(imm as u32);
                 self.registers.write(rt, val);
             },
@@ -133,13 +211,43 @@ impl MipsEngine {
                 let val = self.registers.read(rs) ^ (imm as u32);
                 self.registers.write(rt, val);
             },
+            MipsInstruction::Slti { rt, rs, imm } => {
+                let val = if (self.registers.read(rs) as i32) < imm { 1 } else { 0 };
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::Sltiu { rt, rs, imm } => {
+                let val = if self.registers.read(rs) < (imm as u32) { 1 } else { 0 };
+                self.registers.write(rt, val);
+            },
             MipsInstruction::Lui { rt, imm } => {
                 let val = (imm as u32) << 16;
                 self.registers.write(rt, val);
             },
+
+            // Memory
             MipsInstruction::Lw { rt, rs, offset } => {
                 let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
                 let val = self.memory.read_word(addr)?;
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::Lb { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = self.memory.read_byte(addr)? as i8 as i32 as u32;
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::Lbu { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = self.memory.read_byte(addr)? as u32;
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::Lh { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = self.memory.read_half(addr)? as i16 as i32 as u32;
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::Lhu { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = self.memory.read_half(addr)? as u32;
                 self.registers.write(rt, val);
             },
             MipsInstruction::Sw { rt, rs, offset } => {
@@ -147,6 +255,18 @@ impl MipsEngine {
                 let val = self.registers.read(rt);
                 self.memory.write_word(addr, val)?;
             },
+            MipsInstruction::Sb { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = (self.registers.read(rt) & 0xFF) as u8;
+                self.memory.write_byte(addr, val)?;
+            },
+            MipsInstruction::Sh { rt, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32).wrapping_add(offset) as u32;
+                let val = (self.registers.read(rt) & 0xFFFF) as u16;
+                self.memory.write_half(addr, val)?;
+            },
+
+            // Branches
             MipsInstruction::Beq { rs, rt, label } => {
                 if self.registers.read(rs) == self.registers.read(rt) {
                     next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
@@ -157,6 +277,28 @@ impl MipsEngine {
                     next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
                 }
             },
+            MipsInstruction::Bltz { rs, label } => {
+                if (self.registers.read(rs) as i32) < 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Bgez { rs, label } => {
+                if (self.registers.read(rs) as i32) >= 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Blez { rs, label } => {
+                if (self.registers.read(rs) as i32) <= 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Bgtz { rs, label } => {
+                if (self.registers.read(rs) as i32) > 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+
+            // J-Type
             MipsInstruction::J { label } => {
                 next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
             },
@@ -165,13 +307,20 @@ impl MipsEngine {
                 next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
             },
             MipsInstruction::Jr { rs } => {
-                if rs == 31 {
+                let target = self.registers.read(rs);
+                if rs == 31 && target == 0 { // Simple heuristic for halt
                     self.is_halted = true;
-                    self.output_buffer.push_str("\n[Program Halted via JR $ra]");
+                    self.output_buffer.push_str("\n[Program Halted]");
                 } else {
-                    return Err("Complex JR not supported".to_string());
+                    next_pc = target / 4;
                 }
             },
+            MipsInstruction::Jalr { rd, rs } => {
+                self.registers.write(rd, (self.pc + 1) * 4);
+                next_pc = self.registers.read(rs) / 4;
+            },
+
+            // Special
             MipsInstruction::Syscall => {
                 let v0 = self.registers.read(2);
                 match v0 {
@@ -196,12 +345,12 @@ impl MipsEngine {
 
     pub fn run_all(&mut self) -> Result<String, String> {
         let mut count = 0;
-        while count < 5000 && !self.is_halted && self.step()? {
+        while count < 10000 && !self.is_halted && self.pc < self.program.len() as u32 && self.step()? {
             count += 1;
         }
         
         let mut result = self.output_buffer.clone();
-        if count >= 5000 {
+        if count >= 10000 {
             result.push_str("\n[Error: Timeout]");
         } else {
             result.push_str(&format!("\n[Completed in {} steps]", count));
@@ -214,6 +363,8 @@ impl MipsEngine {
         
         SimulatorState {
             registers: self.registers.get_all(),
+            hi: self.registers.hi,
+            lo: self.registers.lo,
             pc: self.pc * 4,
             current_line,
             memory_sample: self.memory.get_sample(256),

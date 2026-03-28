@@ -46,6 +46,28 @@ impl Memory {
         Ok(u32::from_le_bytes(bytes))
     }
 
+    pub fn write_half(&mut self, addr: u32, val: u16) -> Result<(), String> {
+        if addr % 2 != 0 {
+            return Err(format!("Unaligned halfword write at 0x{:08X}", addr));
+        }
+        let bytes = val.to_le_bytes();
+        for (i, &b) in bytes.iter().enumerate() {
+            self.write_byte(addr + i as u32, b)?;
+        }
+        Ok(())
+    }
+
+    pub fn read_half(&self, addr: u32) -> Result<u16, String> {
+        if addr % 2 != 0 {
+            return Err(format!("Unaligned halfword read at 0x{:08X}", addr));
+        }
+        let mut bytes = [0u8; 2];
+        for i in 0..2 {
+            bytes[i] = self.read_byte(addr + i as u32)?;
+        }
+        Ok(u16::from_le_bytes(bytes))
+    }
+
     pub fn get_sample(&self, size: usize) -> Vec<u8> {
         self.storage[0..std::cmp::min(size, self.storage.len())].to_vec()
     }

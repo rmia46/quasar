@@ -3,11 +3,13 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RegisterFile {
     values: [u32; 32],
+    pub hi: u32,
+    pub lo: u32,
 }
 
 impl RegisterFile {
     pub fn new() -> Self {
-        RegisterFile { values: [0; 32] }
+        RegisterFile { values: [0; 32], hi: 0, lo: 0 }
     }
 
     pub fn read(&self, index: usize) -> u32 {
@@ -27,5 +29,7 @@ impl RegisterFile {
 
     pub fn reset(&mut self) {
         self.values = [0; 32];
+        self.hi = 0;
+        self.lo = 0;
     }
 }
