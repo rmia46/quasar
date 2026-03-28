@@ -28,6 +28,7 @@ import MemoryView from './components/MemoryView';
 import Console from './components/Console';
 import SettingsDialog from './components/SettingsDialog';
 import HelpDialog from './components/HelpDialog';
+import AboutDialog from './components/AboutDialog';
 import { QUASAR_DARK, QUASAR_LIGHT } from './theme/defaults';
 import { applyTheme } from './theme/themeApplier';
 import { ConfigService, Settings, DEFAULT_SETTINGS } from './services/configService';
@@ -65,6 +66,7 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const editorRef = useRef<any>(null);
 
@@ -300,6 +302,11 @@ function App() {
         e.preventDefault();
         handleStep();
       }
+      // F1 to help
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setIsHelpOpen(true);
+      }
       // Ctrl+R to reset
       if (e.ctrlKey && e.key === 'r') {
         e.preventDefault();
@@ -396,7 +403,7 @@ function App() {
             <div className="w-8 h-8 flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 overflow-hidden">
               <img src="/quasar-logo.svg" alt="Quasar Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-sm font-black tracking-tight text-[var(--app-foreground)] opacity-90 uppercase">Quasar</span>
+            <span className="text-sm font-black tracking-tight opacity-90 uppercase" style={{ color: '#ff892f' }}>Quasar</span>
           </div>
 
           <MenuButton label="File" items={[
@@ -424,8 +431,8 @@ function App() {
             { label: 'Theme: Quasar Light', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_LIGHT })) },
           ]} />
           <MenuButton label="Help" items={[
-            { label: 'Documentation', onClick: () => setIsHelpOpen(true) },
-            { label: 'About Quasar' }
+            { label: 'Documentation', onClick: () => setIsHelpOpen(true), shortcut: 'F1' },
+            { label: 'About Quasar', onClick: () => setIsAboutOpen(true) }
           ]} />
         </div>
 
@@ -559,6 +566,11 @@ function App() {
       {/* Help Dialog */}
       {isHelpOpen && (
         <HelpDialog onClose={() => setIsHelpOpen(false)} />
+      )}
+
+      {/* About Dialog */}
+      {isAboutOpen && (
+        <AboutDialog onClose={() => setIsAboutOpen(false)} />
       )}
     </div>
   );

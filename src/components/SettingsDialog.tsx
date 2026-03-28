@@ -49,7 +49,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
           </nav>
 
           <div className="p-4 text-[9px] font-bold text-[var(--app-foreground)] opacity-30 uppercase tracking-tighter text-center">
-            Quasar MIPS IDE v0.1.0
+            Quasar MIPS IDE v0.9.1 Beta
           </div>
         </aside>
 
