@@ -149,6 +149,7 @@ function App() {
   });
 
   const [changedIndices, setChangedIndices] = useState<number[]>([]);
+  const [consoleOutput, setConsoleOutput] = useState('');
 
   const updateSimulatorState = useCallback((newState: SimulatorState) => {
     const changed: number[] = [];
@@ -158,6 +159,11 @@ function App() {
       }
     });
     setChangedIndices(changed);
+    
+    if (newState.message) {
+      setConsoleOutput(prev => prev + (prev ? '\n' : '') + newState.message);
+    }
+    
     setState(newState);
   }, [state.registers]);
 
@@ -359,6 +365,7 @@ function App() {
     try {
       const result = await invoke<SimulatorState>('reset_simulator');
       setChangedIndices([]);
+      setConsoleOutput('');
       setState(result);
     } catch (err) {
       console.error(err);
@@ -609,7 +616,7 @@ function App() {
           <div onMouseDown={startResizing} className="h-1 bg-[var(--border)] hover:bg-blue-500 cursor-row-resize flex items-center justify-center transition-colors group z-10">
           </div>
 
-          <Console output={state.message} isCollapsed={isConsoleCollapsed} onToggle={() => setIsConsoleCollapsed(!isConsoleCollapsed)} height={consoleHeight} />
+          <Console output={consoleOutput} isCollapsed={isConsoleCollapsed} onToggle={() => setIsConsoleCollapsed(!isConsoleCollapsed)} height={consoleHeight} />
         </div>
 
         <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] p-4 gap-4 border-l border-[var(--border)]">
