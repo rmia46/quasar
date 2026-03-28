@@ -6,7 +6,6 @@ import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { 
   Play, 
   RotateCcw, 
-  Cpu, 
   FileText, 
   FolderOpen, 
   Save, 
@@ -393,11 +392,11 @@ function App() {
       {/* 1. Custom Title Bar / Menu Bar */}
       <nav data-tauri-drag-region className="h-10 bg-[var(--toolbar-background)] border-b border-[var(--border)] flex items-center justify-between px-4 transition-colors duration-200 shrink-0 select-none shadow-sm relative z-50 cursor-default">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 mr-4 group cursor-pointer">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
-              <Cpu size={14} className="text-white" />
+          <div className="flex items-center gap-2.5 mr-6 group cursor-pointer relative top-[2px]" onClick={() => setIsHelpOpen(true)}>
+            <div className="w-8 h-8 flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 overflow-hidden">
+              <img src="/quasar-logo.svg" alt="Quasar Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-[11px] font-bold tracking-tighter text-[var(--app-foreground)] opacity-80 uppercase">Quasar</span>
+            <span className="text-sm font-black tracking-tight text-[var(--app-foreground)] opacity-90 uppercase">Quasar</span>
           </div>
 
           <MenuButton label="File" items={[
@@ -431,7 +430,7 @@ function App() {
         </div>
 
         {/* Window Title (Visible on frameless windows) */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.4em] opacity-20 pointer-events-none whitespace-nowrap hidden lg:block">
+        <div className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.4em] text-[var(--app-foreground)] opacity-50 pointer-events-none whitespace-nowrap hidden lg:block">
           {activeFileName}{isModified ? '*' : ''}
         </div>
 
