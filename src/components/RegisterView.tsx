@@ -2,6 +2,7 @@ import React from 'react';
 
 interface RegisterViewProps {
   registers: number[];
+  changedIndices: number[];
 }
 
 const REGISTER_NAMES = [
@@ -11,7 +12,7 @@ const REGISTER_NAMES = [
   '$t8', '$t9', '$k0', '$k1', '$gp', '$sp', '$fp', '$ra'
 ];
 
-const RegisterView: React.FC<RegisterViewProps> = ({ registers }) => {
+const RegisterView: React.FC<RegisterViewProps> = ({ registers, changedIndices }) => {
   return (
     <div className="flex flex-col h-full bg-[var(--app-background)] rounded-lg shadow-sm overflow-hidden border border-[var(--border)]">
       <div className="bg-[var(--toolbar-background)] px-4 py-2 border-b border-[var(--border)]">
@@ -28,10 +29,15 @@ const RegisterView: React.FC<RegisterViewProps> = ({ registers }) => {
             const val = registers[index] || 0;
             const hex = val.toString(16).padStart(8, '0').toUpperCase();
             const dec = (val | 0); // Convert to signed 32-bit integer
+            const isChanged = changedIndices.includes(index);
             
             return (
-              <div key={name} className="flex items-center justify-between py-1 px-2 border-b border-[var(--border)] last:border-0 hover:bg-[var(--tab-active)] transition-colors">
-                <span className="w-16 text-xs font-mono text-blue-600 dark:text-blue-400 font-medium">{name}</span>
+              <div 
+                key={name} 
+                className={`flex items-center justify-between py-1 px-2 border-b border-[var(--border)] last:border-0 transition-all duration-500
+                  ${isChanged ? 'bg-orange-500/20 shadow-[inset_0_0_8px_rgba(249,115,22,0.1)]' : 'hover:bg-[var(--tab-active)]'}`}
+              >
+                <span className={`w-16 text-xs font-mono font-medium ${isChanged ? 'text-orange-500' : 'text-blue-600 dark:text-blue-400'}`}>{name}</span>
                 <span className="flex-1 text-center text-xs font-mono text-[var(--app-foreground)] opacity-80">
                   0x{hex}
                 </span>

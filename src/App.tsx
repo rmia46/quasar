@@ -69,6 +69,7 @@ function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const editorRef = useRef<any>(null);
+  const untitledCounter = useRef(1);
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS(QUASAR_DARK));
 
@@ -147,27 +148,44 @@ function App() {
     message: ''
   });
 
+  const [changedIndices, setChangedIndices] = useState<number[]>([]);
+
+  const updateSimulatorState = useCallback((newState: SimulatorState) => {
+    const changed: number[] = [];
+    newState.registers.forEach((val, idx) => {
+      if (val !== state.registers[idx]) {
+        changed.push(idx);
+      }
+    });
+    setChangedIndices(changed);
+    setState(newState);
+  }, [state.registers]);
+
   // File Operations
   const handleNewFile = useCallback(async () => {
+    // Reset counter if starting from zero open files
+    if (openFiles.length === 0) {
+      untitledCounter.current = 1;
+    }
+
     const id = generateId();
     const newFile: OpenFile = {
       id,
       path: null,
-      name: `Untitled-${openFiles.length + 1}.mips`,
+      name: `Untitled-${untitledCounter.current}.mips`,
       code: '',
       isModified: false,
     };
+    untitledCounter.current += 1;
     setOpenFiles(prev => [...prev, newFile]);
     setActiveFileId(id);
     setState(prev => ({ ...prev, current_line: null }));
   }, [openFiles.length]);
 
-  // Initialize with an untitled file if empty
+  // Initialize with an untitled file only on first load
   useEffect(() => {
-    if (openFiles.length === 0) {
-      handleNewFile();
-    }
-  }, [openFiles.length, handleNewFile]);
+    handleNewFile();
+  }, []); // Run only once on mount
 
   const activeFile = openFiles.find(f => f.id === activeFileId);
   const isModified = activeFile?.isModified || false;
@@ -260,16 +278,13 @@ function App() {
     const fileIndex = openFiles.findIndex(f => f.id === idToRemove);
     const newFiles = openFiles.filter(f => f.id !== idToRemove);
     
+    setOpenFiles(newFiles);
+    
     if (newFiles.length === 0) {
-      const id = generateId();
-      setOpenFiles([{ id, path: null, name: 'Untitled-1.mips', code: '', isModified: false }]);
-      setActiveFileId(id);
-    } else {
-      setOpenFiles(newFiles);
-      if (activeFileId === idToRemove) {
-        const nextIndex = Math.min(fileIndex, newFiles.length - 1);
-        setActiveFileId(newFiles[nextIndex].id);
-      }
+      setActiveFileId(null);
+    } else if (activeFileId === idToRemove) {
+      const nextIndex = Math.min(fileIndex, newFiles.length - 1);
+      setActiveFileId(newFiles[nextIndex].id);
     }
   }, [openFiles, activeFileId]);
 
@@ -318,12 +333,12 @@ function App() {
     try {
       const code = activeFile?.code || '';
       const result = await invoke<SimulatorState>('run_mips_code', { code });
-      setState(result);
+      updateSimulatorState(result);
       if (isConsoleCollapsed) setIsConsoleCollapsed(false);
     } catch (err) {
       setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
     }
-  }, [activeFile, isConsoleCollapsed, ensureSaved]);
+  }, [activeFile, isConsoleCollapsed, ensureSaved, updateSimulatorState]);
 
   const handleStep = useCallback(async () => {
     if (!isTauri()) return;
@@ -332,17 +347,18 @@ function App() {
     try {
       const code = activeFile?.code || '';
       const result = await invoke<SimulatorState>('step_mips_code', { code });
-      setState(result);
+      updateSimulatorState(result);
       if (isConsoleCollapsed) setIsConsoleCollapsed(false);
     } catch (err) {
       setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
     }
-  }, [activeFile, isConsoleCollapsed, ensureSaved]);
+  }, [activeFile, isConsoleCollapsed, ensureSaved, updateSimulatorState]);
 
   const handleReset = useCallback(async () => {
     if (!isTauri()) return;
     try {
       const result = await invoke<SimulatorState>('reset_simulator');
+      setChangedIndices([]);
       setState(result);
     } catch (err) {
       console.error(err);
@@ -551,16 +567,42 @@ function App() {
                 </button>
              </div>
              <div className="flex-1 overflow-hidden">
-                <CodeEditor 
-                    key={activeFileId}
-                    onMount={(editor) => { editorRef.current = editor; }}
-                    onCodeChange={handleCodeChange} 
-                    initialCode={activeFile?.code || ''} 
-                    theme={settings.theme} 
-                    fontSize={settings.fontSize}
-                    tabSize={settings.tabSize}
-                    highlightedLine={state.current_line}
-                />
+                {openFiles.length > 0 ? (
+                  <CodeEditor 
+                      key={activeFileId}
+                      onMount={(editor) => { editorRef.current = editor; }}
+                      onCodeChange={handleCodeChange} 
+                      initialCode={activeFile?.code || ''} 
+                      theme={settings.theme} 
+                      fontSize={settings.fontSize}
+                      tabSize={settings.tabSize}
+                      highlightedLine={state.current_line}
+                  />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-[var(--app-background)]">
+                    <div className="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center mb-6 border border-blue-500/20">
+                      <img src="/quasar-logo.svg" alt="Quasar" className="w-12 h-12 opacity-40" />
+                    </div>
+                    <h2 className="text-xl font-bold text-[var(--app-foreground)] opacity-80 mb-2">Welcome to Quasar</h2>
+                    <p className="text-sm text-[var(--app-foreground)] opacity-40 max-w-[280px] mb-8">
+                      No active files open. Create a new file or open an existing one to get started.
+                    </p>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={handleNewFile}
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                      >
+                        New File
+                      </button>
+                      <button 
+                        onClick={handleOpenFile}
+                        className="px-6 py-2.5 bg-[var(--sidebar-background)] border border-[var(--border)] text-[var(--app-foreground)] text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-[var(--tab-active)] transition-all active:scale-95"
+                      >
+                        Open File
+                      </button>
+                    </div>
+                  </div>
+                )}
              </div>
           </div>
 
@@ -572,7 +614,7 @@ function App() {
 
         <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] p-4 gap-4 border-l border-[var(--border)]">
           <div className="flex-1 overflow-hidden">
-            <RegisterView registers={state.registers} />
+            <RegisterView registers={state.registers} changedIndices={changedIndices} />
           </div>
           <div className="h-72 overflow-hidden">
             <MemoryView memory={state.memory_sample} />
