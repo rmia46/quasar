@@ -33,8 +33,13 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.3em]">MIPS32 R2000 Simulator</p>
           </div>
 
-          <div className="inline-flex items-center px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
-            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Version 1.0.0</span>
+          <div className="flex flex-col items-center gap-2">
+            <div className="inline-flex items-center px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Version 1.0.0</span>
+            </div>
+            <div className="text-[10px] font-bold text-[var(--app-foreground)] opacity-40 uppercase tracking-widest">
+              Author: <span className="text-[var(--app-foreground)] opacity-80">Roman Mia</span> <span className="text-blue-500">(@rmia46)</span>
+            </div>
           </div>
 
           <p className="text-sm text-[var(--app-foreground)] opacity-60 leading-relaxed max-w-[300px]">
