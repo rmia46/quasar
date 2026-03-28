@@ -1,10 +1,10 @@
 # <img src="public/quasar-logo.svg" width="40" height="40" align="center" /> Quasar MIPS IDE
 
-Quasar is a modern, high-performance Integrated Development Environment (IDE) for MIPS32 R2000 assembly. Built with **Tauri v2**, **React**, and **Rust**, it provides a lightweight and intuitive experience for students, researchers, and developers to write, debug, and simulate MIPS code with real-time feedback.
+Quasar is a modern, high-performance Integrated Development Environment (IDE) for MIPS32 R2000 assembly. Built with Tauri v2, React, and Rust, it provides a lightweight and intuitive experience for students, researchers, and developers to write, debug, and simulate MIPS code with real-time feedback.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Modern IDE Experience**: Sleek, frameless window design with a custom draggable title bar.
 - **Advanced Theme Engine**: Support for dynamic JSON theme plugins (similar to VS Code).
@@ -13,36 +13,64 @@ Quasar is a modern, high-performance Integrated Development Environment (IDE) fo
 - **Professional Console**: Real-time message parsing with timestamps, error highlighting, and persistent history.
 - **Customizable**: Personalize your workspace with adjustable font sizes, tab widths, and automation settings.
 
-## 🛠️ Simulator Features
+## Simulator Features
 
 The Quasar MIPS Engine supports a comprehensive subset of the MIPS32 R2000 instruction set:
 
-- **Arithmetic & Logic**: `add`, `sub`, `and`, `or`, `xor`, `nor`, `addi`, `andi`, `sll`, `srl`, etc.
-- **Data Transfer**: `lw`, `sw`, `lb`, `sb`, `lh`, `sh`, `lui`.
-- **Control Flow**: `beq`, `bne`, `slt`, `slti`, `j`, `jal`, `jr`, `jalr`.
-- **Special Ops**: Full support for `mult`, `div`, `mfhi`, `mflo` with dedicated **HI/LO** register tracking.
+- **Arithmetic & Logic**: add, sub, and, or, xor, nor, addi, andi, sll, srl, etc.
+- **Data Transfer**: lw, sw, lb, sb, lh, sh, lui.
+- **Control Flow**: beq, bne, slt, slti, j, jal, jr, jalr.
+- **Special Ops**: Full support for mult, div, mfhi, mflo with dedicated HI/LO register tracking.
 - **Step-by-Step Debugging**: Execute instructions one at a time with visual register change highlighting (orange glow).
-- **System Calls**: Integrated `syscall` support for console I/O.
+- **System Calls**: Integrated syscall support for console I/O.
 
-## 📖 How to Use
+## How to Use
 
-1. **Write**: Create a new file or open an existing `.mips` or `.asm` file.
-2. **Save**: Files must be saved before execution. Enable **Auto-Save before Run** in Settings for a seamless experience.
+1. **Write**: Create a new file or open an existing .mips or .asm file.
+2. **Save**: Files must be saved before execution. Enable "Auto-Save before Run" in Settings for a seamless experience.
 3. **Simulate**: 
-   - Press **F5** or click **Run** to execute the entire program.
-   - Press **F10** or click **Step** to debug line-by-line.
-4. **Observe**: Monitor the **Registers** and **Memory** panes on the right to see real-time state changes.
-5. **Reset**: Use **Ctrl+R** or the **Reset** button to clear state and restart the program.
+   - Press F5 or click Run to execute the entire program.
+   - Press F10 or click Step to debug line-by-line.
+4. **Observe**: Monitor the Registers and Memory panes on the right to see real-time state changes.
+5. **Reset**: Use Ctrl+R or the Reset button to clear state and restart the program.
 
-## 📦 Installation
+## Installation
 
+### Download Binaries
 Download the latest installer for your platform from the [GitHub Releases](https://github.com/rmia46/quasar/releases) page.
 
-- **Windows**: `.msi` or `.exe`
-- **Linux**: `.deb` or `.AppImage`
-- **macOS**: `.dmg`
+- **Windows**: .msi or .exe
+- **Linux**: .deb or .AppImage
+- **macOS**: .dmg
 
-## 👨‍💻 Author
+### Build from Source
+
+To build Quasar from source, ensure you have the following prerequisites installed:
+- **Node.js** (LTS version)
+- **Rust** (Stable toolchain via rustup)
+- **System Dependencies** (Linux only): `libgtk-3-dev`, `webkit2gtk-4.1-dev`, `libappindicator3-dev`, `librsvg2-dev`
+
+#### Steps:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/rmia46/quasar.git
+   cd quasar
+   ```
+2. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
+3. Run in development mode:
+   ```bash
+   npm run tauri dev
+   ```
+4. Build the production bundle:
+   ```bash
+   npm run tauri build
+   ```
+The bundled installer for your OS will be located in `src-tauri/target/release/bundle/`.
+
+## Author
 
 **Roman Mia**
 - Github: [@rmia46](https://github.com/rmia46)
