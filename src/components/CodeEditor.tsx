@@ -155,8 +155,11 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           wordWrap: 'on',
           scrollBeyondLastLine: false,
           automaticLayout: true,
-          padding: { top: 10 },
-          glyphMargin: true,
+          padding: { top: 10, bottom: 10 },
+          glyphMargin: false,
+          lineNumbersMinChars: 3,
+          lineDecorationsWidth: 20,
+          folding: false,
         }}
       />
     </>

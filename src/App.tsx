@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { open, save, ask } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { 
   Play, 
@@ -206,7 +206,7 @@ function App() {
   };
 
   const handleSaveFile = useCallback(async () => {
-    if (!activeFile) return;
+    if (!activeFile) return false;
 
     try {
       let path = activeFile.path;
@@ -214,7 +214,7 @@ function App() {
         path = await save({
           filters: [{ name: 'MIPS Assembly', extensions: ['mips', 's', 'asm'] }]
         });
-        if (!path) return;
+        if (!path) return false;
       }
 
       const content = activeFile.code;
@@ -224,13 +224,15 @@ function App() {
       setOpenFiles(prev => prev.map(f =>
         f.id === activeFileId ? { ...f, path, name, isModified: false } : f
       ));
+      return true;
     } catch (err) {
       console.error("Save Error:", err);
+      return false;
     }
   }, [activeFile, activeFileId]);
 
   const handleSaveFileAs = useCallback(async () => {
-    if (!activeFile) return;
+    if (!activeFile) return false;
 
     try {
       const path = await save({
@@ -245,9 +247,12 @@ function App() {
         setOpenFiles(prev => prev.map(f =>
           f.id === activeFileId ? { ...f, path, name, isModified: false } : f
         ));
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("Save As Error:", err);
+      return false;
     }
   }, [activeFile, activeFileId]);
 
@@ -273,6 +278,76 @@ function App() {
       f.id === activeFileId ? { ...f, code: newCode, isModified: true } : f
     ));
   }, [activeFileId]);
+
+  const ensureSaved = useCallback(async () => {
+    if (!activeFile) return false;
+    
+    // Case 1: File already exists on disk
+    if (activeFile.path) {
+      if (activeFile.isModified) {
+        if (settings.autoSaveBeforeRun) {
+          return await handleSaveFile();
+        } else {
+          const shouldSave = await ask(
+            'The current file has unsaved changes. Save now and run?',
+            { title: 'Save Required', kind: 'warning', okLabel: 'Save & Run', cancelLabel: 'Cancel' }
+          );
+          if (shouldSave) return await handleSaveFile();
+          return false;
+        }
+      }
+      return true;
+    } 
+    
+    // Case 2: Untitled file (no path)
+    const shouldSave = await ask(
+      'The current file is not saved. You must save it to disk before running. Save now?',
+      { title: 'Save Required', kind: 'warning', okLabel: 'Save', cancelLabel: 'Cancel' }
+    );
+    if (shouldSave) {
+      return await handleSaveFile();
+    }
+    return false;
+  }, [activeFile, handleSaveFile, settings.autoSaveBeforeRun]);
+
+  // Simulator Operations
+  const handleRun = useCallback(async () => {
+    if (!isTauri()) return;
+    if (!(await ensureSaved())) return;
+
+    try {
+      const code = activeFile?.code || '';
+      const result = await invoke<SimulatorState>('run_mips_code', { code });
+      setState(result);
+      if (isConsoleCollapsed) setIsConsoleCollapsed(false);
+    } catch (err) {
+      setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
+    }
+  }, [activeFile, isConsoleCollapsed, ensureSaved]);
+
+  const handleStep = useCallback(async () => {
+    if (!isTauri()) return;
+    if (!(await ensureSaved())) return;
+
+    try {
+      const code = activeFile?.code || '';
+      const result = await invoke<SimulatorState>('step_mips_code', { code });
+      setState(result);
+      if (isConsoleCollapsed) setIsConsoleCollapsed(false);
+    } catch (err) {
+      setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
+    }
+  }, [activeFile, isConsoleCollapsed, ensureSaved]);
+
+  const handleReset = useCallback(async () => {
+    if (!isTauri()) return;
+    try {
+      const result = await invoke<SimulatorState>('reset_simulator');
+      setState(result);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -318,42 +393,7 @@ function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleSaveFile, handleNewFile]);
-
-  // Simulator Operations
-  const handleRun = async () => {
-    if (!isTauri()) return;
-    try {
-      const code = activeFile?.code || '';
-      const result = await invoke<SimulatorState>('run_mips_code', { code });
-      setState(result);
-      if (isConsoleCollapsed) setIsConsoleCollapsed(false);
-    } catch (err) {
-      setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
-    }
-  };
-
-  const handleStep = async () => {
-    if (!isTauri()) return;
-    try {
-      const code = activeFile?.code || '';
-      const result = await invoke<SimulatorState>('step_mips_code', { code });
-      setState(result);
-      if (isConsoleCollapsed) setIsConsoleCollapsed(false);
-    } catch (err) {
-      setState(prev => ({ ...prev, message: `Fatal Error: ${err}` }));
-    }
-  };
-
-  const handleReset = async () => {
-    if (!isTauri()) return;
-    try {
-      const result = await invoke<SimulatorState>('reset_simulator');
-      setState(result);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  }, [handleSaveFile, handleNewFile, handleOpenFile, handleRun, handleStep, handleReset]);
 
   // Resize Logic
   const startResizing = useCallback(() => setIsResizing(true), []);
@@ -423,13 +463,11 @@ function App() {
             { label: 'Step Forward', onClick: handleStep, shortcut: 'F10' },
             { label: 'Reset Engine', onClick: handleReset, shortcut: 'Ctrl+R' },
           ]} />
-          <MenuButton label="Settings" items={[
-            { label: 'Preferences...', onClick: () => setIsSettingsOpen(true) },
-            { separator: true },
-            { label: 'Load Theme...', onClick: handleLoadTheme },
-            { label: 'Theme: Quasar Dark', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_DARK })) },
-            { label: 'Theme: Quasar Light', onClick: () => setSettings(s => ({ ...s, theme: QUASAR_LIGHT })) },
-          ]} />
+        <MenuButton label="Settings" items={[
+          { label: 'Preferences...', onClick: () => setIsSettingsOpen(true), shortcut: 'Ctrl+,' },
+          { separator: true },
+          { label: 'Load Theme...', onClick: handleLoadTheme },
+        ]} />
           <MenuButton label="Help" items={[
             { label: 'Documentation', onClick: () => setIsHelpOpen(true), shortcut: 'F1' },
             { label: 'About Quasar', onClick: () => setIsAboutOpen(true) }

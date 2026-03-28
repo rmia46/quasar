@@ -6,12 +6,14 @@ export interface Settings {
   theme: AppTheme;
   fontSize: number;
   tabSize: number;
+  autoSaveBeforeRun: boolean;
 }
 
 export const DEFAULT_SETTINGS: (darkTheme: AppTheme) => Settings = (darkTheme) => ({
   theme: darkTheme,
-  fontSize: 14,
+  fontSize: 16,
   tabSize: 4,
+  autoSaveBeforeRun: true,
 });
 
 export class ConfigService {
