@@ -29,7 +29,7 @@ import Console from './components/Console';
 import SettingsDialog from './components/SettingsDialog';
 import HelpDialog from './components/HelpDialog';
 import AboutDialog from './components/AboutDialog';
-import { QUASAR_DARK, QUASAR_LIGHT } from './theme/defaults';
+import { QUASAR_DARK } from './theme/defaults';
 import { applyTheme } from './theme/themeApplier';
 import { ConfigService, Settings, DEFAULT_SETTINGS } from './services/configService';
 
