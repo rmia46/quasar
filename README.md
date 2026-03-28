@@ -43,6 +43,20 @@ Download the latest installer for your platform from the [GitHub Releases](https
 - **Linux**: .deb or .AppImage
 - **macOS**: .dmg
 
+### Arch Linux (AUR)
+
+If you are an Arch Linux user, you can install Quasar from the AUR using an AUR helper like `yay` or `paru`:
+
+**Pre-built Binary (Recommended):**
+```bash
+yay -S quasar-mips-ide-bin
+```
+
+**Latest Development Version (Build from source):**
+```bash
+yay -S quasar-mips-ide-git
+```
+
 ### Build from Source
 
 To build Quasar from source, ensure you have the following prerequisites installed:
