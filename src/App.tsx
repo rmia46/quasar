@@ -235,10 +235,14 @@ function App() {
     setState(prev => ({ ...prev, current_line: null }));
   }, [openFiles.length]);
 
+  const hasInitialized = useRef(false);
   // Initialize with an untitled file only on first load
   useEffect(() => {
-    handleNewFile();
-  }, []); // Run only once on mount
+    if (!hasInitialized.current) {
+      handleNewFile();
+      hasInitialized.current = true;
+    }
+  }, [handleNewFile]);
 
   const activeFile = openFiles.find(f => f.id === activeFileId);
   const isModified = activeFile?.isModified || false;
