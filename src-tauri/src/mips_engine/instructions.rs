@@ -66,6 +66,12 @@ pub enum MipsInstruction {
 
     // Pseudo-instructions
     La   { rt: usize, label: String },
+    Bge  { rs: usize, rt: usize, label: String },
+    Ble  { rs: usize, rt: usize, label: String },
+    Bgt  { rs: usize, rt: usize, label: String },
+    Blt  { rs: usize, rt: usize, label: String },
+    Beqz { rs: usize, label: String },
+    Bnez { rs: usize, label: String },
 
     // Special
     Syscall,

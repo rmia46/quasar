@@ -111,6 +111,12 @@ impl Parser {
             "bgez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bgez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             "blez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Blez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             "bgtz" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bgtz { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "bge"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Bge { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "ble"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Ble { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "bgt"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Bgt { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "blt"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Blt { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "beqz" => Ok(Some(ParseResult::Instruction(MipsInstruction::Beqz { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "bnez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bnez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             
             // J-Type
             "j"    => Ok(Some(ParseResult::Instruction(MipsInstruction::J    { label: parts[1].to_string() }))),

@@ -358,6 +358,36 @@ impl MipsEngine {
                 let addr = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
                 self.registers.write(rt, addr);
             },
+            MipsInstruction::Bge { rs, rt, label } => {
+                if (self.registers.read(rs) as i32) >= (self.registers.read(rt) as i32) {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Ble { rs, rt, label } => {
+                if (self.registers.read(rs) as i32) <= (self.registers.read(rt) as i32) {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Bgt { rs, rt, label } => {
+                if (self.registers.read(rs) as i32) > (self.registers.read(rt) as i32) {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Blt { rs, rt, label } => {
+                if (self.registers.read(rs) as i32) < (self.registers.read(rt) as i32) {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Beqz { rs, label } => {
+                if self.registers.read(rs) == 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
+            MipsInstruction::Bnez { rs, label } => {
+                if self.registers.read(rs) != 0 {
+                    next_pc = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                }
+            },
 
             // Special
             MipsInstruction::Syscall => {

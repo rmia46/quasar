@@ -133,4 +133,21 @@ mod tests {
         let state = engine.get_state("".into());
         assert!(state.message.contains("Hello"));
     }
+
+    #[test]
+    fn test_pseudo_branches() {
+        let code = "
+            li $t0, 10
+            li $t1, 5
+            bge $t0, $t1, success
+            li $s0, 0
+            j end
+            success:
+                li $s0, 1
+            end:
+                nop
+        ";
+        let regs = run_test(code);
+        assert_eq!(regs[16], 1); // $s0 should be 1
+    }
 }
