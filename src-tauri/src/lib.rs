@@ -38,7 +38,7 @@ fn step_mips_code(code: String) -> SimulatorState {
     let mut engine = ENGINE.lock().unwrap();
     
     // Check if we need to load (simplified: if pc is 0)
-    if engine.get_state("".into()).pc == 0 {
+    if engine.get_pc() == 0 {
         if let Err(e) = engine.load_program(&code) {
             return engine.get_state(format!("Load Error: {}", e));
         }

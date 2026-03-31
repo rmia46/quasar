@@ -8,9 +8,11 @@ mod tests;
 pub use registers::RegisterFile;
 pub use memory::Memory;
 pub use instructions::MipsInstruction;
-pub use parser::Parser;
+pub use parser::{Parser, ParseResult, Directive};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
+
+const DATA_SEGMENT_START: u32 = 0x2000;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SimulatorState {
@@ -55,6 +57,8 @@ impl MipsEngine {
         let mut line_mappings = Vec::new();
         let mut temp_labels = HashMap::new();
         let mut instruction_index = 0;
+        let mut data_ptr = DATA_SEGMENT_START;
+        let mut current_section = "text";
 
         for (zero_based_line, raw_line) in assembly.lines().enumerate() {
             let line_num = (zero_based_line + 1) as u32;
@@ -62,19 +66,48 @@ impl MipsEngine {
             
             if line.is_empty() { continue; }
 
-            if line.ends_with(':') {
-                let label = line[..line.len()-1].to_string();
-                temp_labels.insert(label, instruction_index);
-            } else {
-                match Parser::parse_line(line) {
-                    Ok(Some(inst)) => {
-                        instructions.push(inst);
-                        line_mappings.push(line_num);
-                        instruction_index += 1;
-                    },
-                    Ok(None) => {},
-                    Err(e) => return Err(format!("Line {}: {}", line_num, e)),
+            let mut processing_line = line;
+
+            // Handle Labels (extract if present)
+            if let Some(colon_idx) = processing_line.find(':') {
+                let label = processing_line[..colon_idx].trim().to_string();
+                if !label.is_empty() {
+                    if current_section == "text" {
+                        temp_labels.insert(label, instruction_index);
+                    } else {
+                        temp_labels.insert(label, data_ptr);
+                    }
                 }
+                processing_line = processing_line[colon_idx + 1..].trim();
+            }
+
+            if processing_line.is_empty() { continue; }
+
+            // Handle Directives and Instructions
+            match Parser::parse_line(processing_line) {
+                Ok(Some(ParseResult::Directive(d))) => {
+                    match d {
+                        Directive::Data => current_section = "data",
+                        Directive::Text => current_section = "text",
+                        Directive::Asciiz(s) => {
+                            if current_section != "data" { return Err(format!("Line {}: .asciiz must be in .data section", line_num)); }
+                            for b in s.as_bytes() {
+                                self.memory.write_byte(data_ptr, *b)?;
+                                data_ptr += 1;
+                            }
+                            self.memory.write_byte(data_ptr, 0)?; // Null terminator
+                            data_ptr += 1;
+                        }
+                    }
+                },
+                Ok(Some(ParseResult::Instruction(inst))) => {
+                    if current_section != "text" { return Err(format!("Line {}: Instructions must be in .text section", line_num)); }
+                    instructions.push(inst);
+                    line_mappings.push(line_num);
+                    instruction_index += 1;
+                },
+                Ok(None) => {},
+                Err(e) => return Err(format!("Line {}: {}", line_num, e)),
             }
         }
 
@@ -320,6 +353,12 @@ impl MipsEngine {
                 next_pc = self.registers.read(rs) / 4;
             },
 
+            // Pseudo-instructions
+            MipsInstruction::La { rt, label } => {
+                let addr = *self.labels.get(&label).ok_or(format!("Undefined label: {}", label))?;
+                self.registers.write(rt, addr);
+            },
+
             // Special
             MipsInstruction::Syscall => {
                 let v0 = self.registers.read(2);
@@ -327,6 +366,17 @@ impl MipsEngine {
                     1 => {
                         let a0 = self.registers.read(4);
                         self.output_buffer.push_str(&format!("{}", a0 as i32));
+                    },
+                    4 => {
+                        let mut addr = self.registers.read(4);
+                        let mut s = String::new();
+                        loop {
+                            let b = self.memory.read_byte(addr)?;
+                            if b == 0 { break; }
+                            s.push(b as char);
+                            addr += 1;
+                        }
+                        self.output_buffer.push_str(&s);
                     },
                     10 => self.is_halted = true,
                     _ => self.output_buffer.push_str(&format!("\n[Syscall {} not implemented]", v0)),
@@ -358,9 +408,21 @@ impl MipsEngine {
         Ok(result)
     }
 
-    pub fn get_state(&self, message: String) -> SimulatorState {
+    pub fn get_state(&mut self, message: String) -> SimulatorState {
         let current_line = self.instruction_to_line.get(self.pc as usize).cloned();
         
+        let combined_message = if self.output_buffer.is_empty() {
+            message
+        } else {
+            let pending = self.output_buffer.clone();
+            self.output_buffer.clear();
+            if message.is_empty() {
+                pending
+            } else {
+                format!("{}\n{}", pending, message)
+            }
+        };
+
         SimulatorState {
             registers: self.registers.get_all(),
             hi: self.registers.hi,
@@ -368,7 +430,7 @@ impl MipsEngine {
             pc: self.pc * 4,
             current_line,
             memory_sample: self.memory.get_sample(128),
-            message,
+            message: combined_message,
         }
     }
 
@@ -379,5 +441,9 @@ impl MipsEngine {
         self.is_halted = false;
         self.output_buffer.clear();
         self.instruction_to_line.clear();
+    }
+
+    pub fn get_pc(&self) -> u32 {
+        self.pc
     }
 }

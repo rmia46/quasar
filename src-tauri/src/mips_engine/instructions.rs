@@ -64,6 +64,9 @@ pub enum MipsInstruction {
     Jr   { rs: usize },
     Jalr { rd: usize, rs: usize },
 
+    // Pseudo-instructions
+    La   { rt: usize, label: String },
+
     // Special
     Syscall,
     Break,

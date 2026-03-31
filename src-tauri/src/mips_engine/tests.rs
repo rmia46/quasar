@@ -114,4 +114,23 @@ mod tests {
         assert_eq!(regs[16], 1); // $s0
         assert_eq!(regs[17], 2); // $s1
     }
+
+    #[test]
+    fn test_data_and_la() {
+        let code = "
+            .data
+            msg: .asciiz \"Hello\"
+            
+            .text
+            main:
+                la $a0, msg
+                li $v0, 4
+                syscall
+        ";
+        let mut engine = MipsEngine::new();
+        engine.load_program(code).unwrap();
+        engine.run_all().unwrap();
+        let state = engine.get_state("".into());
+        assert!(state.message.contains("Hello"));
+    }
 }

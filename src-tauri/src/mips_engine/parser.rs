@@ -1,9 +1,27 @@
 use super::instructions::MipsInstruction;
 
+pub enum Directive {
+    Data,
+    Text,
+    Asciiz(String),
+}
+
+pub enum ParseResult {
+    Instruction(MipsInstruction),
+    Directive(Directive),
+}
+
 pub struct Parser;
 
 impl Parser {
-    pub fn parse_line(line: &str) -> Result<Option<MipsInstruction>, String> {
+    pub fn parse_line(line: &str) -> Result<Option<ParseResult>, String> {
+        let line = line.trim();
+        if line.is_empty() { return Ok(None); }
+
+        if line.starts_with('.') {
+            return Ok(Some(ParseResult::Directive(Self::parse_directive(line)?)));
+        }
+
         let parts: Vec<&str> = line.split(|c: char| c == ',' || c.is_whitespace())
             .filter(|s| !s.is_empty())
             .collect();
@@ -13,102 +31,127 @@ impl Parser {
         let op = parts[0].to_lowercase();
         match op.as_str() {
             // Arithmetic R-Type
-            "add"  => Ok(Some(MipsInstruction::Add { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "addu" => Ok(Some(MipsInstruction::Addu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "sub"  => Ok(Some(MipsInstruction::Sub { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "subu" => Ok(Some(MipsInstruction::Subu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "and"  => Ok(Some(MipsInstruction::And { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "or"   => Ok(Some(MipsInstruction::Or  { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "xor"  => Ok(Some(MipsInstruction::Xor { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "nor"  => Ok(Some(MipsInstruction::Nor { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "slt"  => Ok(Some(MipsInstruction::Slt { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
-            "sltu" => Ok(Some(MipsInstruction::Sltu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? })),
+            "add"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Add { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "addu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Addu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "sub"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Sub { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "subu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Subu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "and"  => Ok(Some(ParseResult::Instruction(MipsInstruction::And { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "or"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Or  { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "xor"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Xor { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "nor"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Nor { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "slt"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Slt { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
+            "sltu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Sltu { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: Self::reg(parts[3])? }))),
             
             // Shift
-            "sll"  => Ok(Some(MipsInstruction::Sll { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? })),
-            "srl"  => Ok(Some(MipsInstruction::Srl { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? })),
-            "sra"  => Ok(Some(MipsInstruction::Sra { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? })),
-            "sllv" => Ok(Some(MipsInstruction::Sllv { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? })),
-            "srlv" => Ok(Some(MipsInstruction::Srlv { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? })),
-            "srav" => Ok(Some(MipsInstruction::Srav { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? })),
+            "sll"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Sll { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? }))),
+            "srl"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Srl { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? }))),
+            "sra"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Sra { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, sa: Self::imm_u32(parts[3])? }))),
+            "sllv" => Ok(Some(ParseResult::Instruction(MipsInstruction::Sllv { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? }))),
+            "srlv" => Ok(Some(ParseResult::Instruction(MipsInstruction::Srlv { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? }))),
+            "srav" => Ok(Some(ParseResult::Instruction(MipsInstruction::Srav { rd: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, rs: Self::reg(parts[3])? }))),
 
             // Mult/Div
-            "mult"  => Ok(Some(MipsInstruction::Mult { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? })),
-            "multu" => Ok(Some(MipsInstruction::Multu { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? })),
-            "div"   => Ok(Some(MipsInstruction::Div { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? })),
-            "divu"  => Ok(Some(MipsInstruction::Divu { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? })),
-            "mfhi"  => Ok(Some(MipsInstruction::Mfhi { rd: Self::reg(parts[1])? })),
-            "mflo"  => Ok(Some(MipsInstruction::Mflo { rd: Self::reg(parts[1])? })),
-            "mthi"  => Ok(Some(MipsInstruction::Mthi { rs: Self::reg(parts[1])? })),
-            "mtlo"  => Ok(Some(MipsInstruction::Mtlo { rs: Self::reg(parts[1])? })),
+            "mult"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Mult { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? }))),
+            "multu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Multu { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? }))),
+            "div"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Div { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? }))),
+            "divu"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Divu { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])? }))),
+            "mfhi"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Mfhi { rd: Self::reg(parts[1])? }))),
+            "mflo"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Mflo { rd: Self::reg(parts[1])? }))),
+            "mthi"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Mthi { rs: Self::reg(parts[1])? }))),
+            "mtlo"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Mtlo { rs: Self::reg(parts[1])? }))),
 
             // Immediate
-            "addi"  => Ok(Some(MipsInstruction::Addi { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? })),
-            "addiu" => Ok(Some(MipsInstruction::Addiu { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? })),
-            "andi"  => Ok(Some(MipsInstruction::Andi { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? })),
-            "ori"   => Ok(Some(MipsInstruction::Ori  { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? })),
-            "xori"  => Ok(Some(MipsInstruction::Xori { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? })),
-            "slti"  => Ok(Some(MipsInstruction::Slti { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? })),
-            "sltiu" => Ok(Some(MipsInstruction::Sltiu { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? })),
-            "lui"   => Ok(Some(MipsInstruction::Lui  { rt: Self::reg(parts[1])?, imm: Self::imm_u16(parts[2])? })),
+            "addi"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Addi { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? }))),
+            "addiu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Addiu { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? }))),
+            "andi"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Andi { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? }))),
+            "ori"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Ori  { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? }))),
+            "xori"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Xori { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_u16(parts[3])? }))),
+            "slti"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Slti { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? }))),
+            "sltiu" => Ok(Some(ParseResult::Instruction(MipsInstruction::Sltiu { rt: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, imm: Self::imm_i32(parts[3])? }))),
+            "lui"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Lui  { rt: Self::reg(parts[1])?, imm: Self::imm_u16(parts[2])? }))),
             
             // Memory
             "lw"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Lw { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lw { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "lb"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Lb { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lb { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "lbu"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Lbu { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lbu { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "lh"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Lh { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lh { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "lhu"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Lhu { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lhu { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "sw"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Sw { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sw { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "sb"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Sb { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sb { rt: Self::reg(parts[1])?, rs, offset })))
             },
             "sh"   => {
                 let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(MipsInstruction::Sh { rt: Self::reg(parts[1])?, rs, offset }))
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sh { rt: Self::reg(parts[1])?, rs, offset })))
             },
 
             // Branches
-            "beq"  => Ok(Some(MipsInstruction::Beq { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() })),
-            "bne"  => Ok(Some(MipsInstruction::Bne { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() })),
-            "bltz" => Ok(Some(MipsInstruction::Bltz { rs: Self::reg(parts[1])?, label: parts[2].to_string() })),
-            "bgez" => Ok(Some(MipsInstruction::Bgez { rs: Self::reg(parts[1])?, label: parts[2].to_string() })),
-            "blez" => Ok(Some(MipsInstruction::Blez { rs: Self::reg(parts[1])?, label: parts[2].to_string() })),
-            "bgtz" => Ok(Some(MipsInstruction::Bgtz { rs: Self::reg(parts[1])?, label: parts[2].to_string() })),
+            "beq"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Beq { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "bne"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Bne { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
+            "bltz" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bltz { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "bgez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bgez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "blez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Blez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "bgtz" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bgtz { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             
             // J-Type
-            "j"    => Ok(Some(MipsInstruction::J    { label: parts[1].to_string() })),
-            "jal"  => Ok(Some(MipsInstruction::Jal  { label: parts[1].to_string() })),
-            "jr"   => Ok(Some(MipsInstruction::Jr   { rs: Self::reg(parts[1])? })),
-            "jalr" => Ok(Some(MipsInstruction::Jalr { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])? })),
+            "j"    => Ok(Some(ParseResult::Instruction(MipsInstruction::J    { label: parts[1].to_string() }))),
+            "jal"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Jal  { label: parts[1].to_string() }))),
+            "jr"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Jr   { rs: Self::reg(parts[1])? }))),
+            "jalr" => Ok(Some(ParseResult::Instruction(MipsInstruction::Jalr { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])? }))),
 
             // Pseudo-instructions
-            "li"   => Ok(Some(MipsInstruction::Addiu { rt: Self::reg(parts[1])?, rs: 0, imm: Self::imm_i32(parts[2])? })),
-            "move" => Ok(Some(MipsInstruction::Addu  { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: 0 })),
+            "li"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Addiu { rt: Self::reg(parts[1])?, rs: 0, imm: Self::imm_i32(parts[2])? }))),
+            "la"   => Ok(Some(ParseResult::Instruction(MipsInstruction::La { rt: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "move" => Ok(Some(ParseResult::Instruction(MipsInstruction::Addu  { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: 0 }))),
 
-            "syscall" => Ok(Some(MipsInstruction::Syscall)),
-            "break"   => Ok(Some(MipsInstruction::Break)),
-            "nop" => Ok(Some(MipsInstruction::Noop)),
+            "syscall" => Ok(Some(ParseResult::Instruction(MipsInstruction::Syscall))),
+            "break"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Break))),
+            "nop" => Ok(Some(ParseResult::Instruction(MipsInstruction::Noop))),
             _ => Err(format!("Unknown instruction: {}", op)),
         }
+    }
+
+    fn parse_directive(line: &str) -> Result<Directive, String> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        let name = parts[0].to_lowercase();
+        match name.as_str() {
+            ".data" => Ok(Directive::Data),
+            ".text" => Ok(Directive::Text),
+            ".asciiz" => {
+                let content = Self::parse_asciiz(line)?;
+                Ok(Directive::Asciiz(content))
+            },
+            _ => Err(format!("Unknown directive: {}", name)),
+        }
+    }
+
+    fn parse_asciiz(line: &str) -> Result<String, String> {
+        let first_quote = line.find('"').ok_or("Missing opening quote in .asciiz")?;
+        let last_quote = line.rfind('"').ok_or("Missing closing quote in .asciiz")?;
+        if first_quote == last_quote { return Err("Missing closing quote in .asciiz".to_string()); }
+        let mut s = line[first_quote + 1..last_quote].to_string();
+        // Handle basic escapes
+        s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"");
+        Ok(s)
     }
 
     fn reg(s: &str) -> Result<usize, String> {
