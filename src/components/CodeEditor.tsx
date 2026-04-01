@@ -52,12 +52,44 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
     monacoInstance.editor.setTheme(themeName);
   }, []);
 
-  // Sync Dynamic Theme when theme changes
+  // Register Language and Token Provider
   useEffect(() => {
-    if (monaco && theme) {
+    if (monaco) {
+      // Always register/update to ensure latest instructions are included
+      if (!monaco.languages.getLanguages().some(l => l.id === 'mips')) {
+        monaco.languages.register({ id: 'mips' });
+      }
+
+      monaco.languages.setMonarchTokensProvider('mips', {
+        tokenizer: {
+          root: [
+            [/;.*$/, 'comment'],
+            [/#.*$/, 'comment'],
+            [/\$[svat][0-9]|\$[raesp]|\$[zero]|\$[f][0-9]{1,2}/, 'variable'],
+            [/\$[0-9]{1,2}/, 'variable'],
+            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|sllv|srlv|srav|mult|multu|div|divu|mfhi|mflo|mthi|mtlo|jr|jalr|syscall|break|nop|mtc1|mfc1|swc1|lwc1|exit|loop)\b/, 'keyword'],
+            [/\b(add\.s|sub\.s|mul\.s|div\.s|cvt\.s\.w)\b/, 'keyword'],
+            [/\b(addi|addiu|andi|ori|xori|slti|sltiu|lui|lw|sw|lb|lbu|lh|lhu|sb|sh|beq|bne|bltz|bgez|blez|bgtz|j|jal|li|la|move|bge|ble|bgt|blt|beqz|bnez)\b/, 'keyword'],
+            [/^\.[a-zA-Z]+/, 'directive'],
+            [/[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
+            [/\b\d+\b/, 'number'],
+            [/0x[0-9a-fA-F]+\b/, 'number'],
+            [/".*?"/, 'string'],
+          ],
+        },
+      });
+
+      monaco.languages.setLanguageConfiguration('mips', {
+        comments: { lineComment: '#' },
+        brackets: [['(', ')']],
+        autoClosingPairs: [{ open: '(', close: ')' }],
+        surroundingPairs: [{ open: '(', close: ')' }],
+      });
+
+      // Re-apply theme whenever monaco instance is ready
       applyTheme(monaco, theme);
     }
-  }, [theme, monaco, applyTheme]);
+  }, [monaco, applyTheme, theme]);
 
   // Handle resizing manually for better performance
   useEffect(() => {
@@ -106,39 +138,7 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
   function handleEditorDidMount(editorInstance: any, monacoInstance: any) {
     setEditor(editorInstance);
     if (onMount) onMount(editorInstance);
-    
-    // Apply theme immediately on mount
     applyTheme(monacoInstance, theme);
-    
-    // Register MIPS language if not already registered
-    if (!monacoInstance.languages.getLanguages().some((l: any) => l.id === 'mips')) {
-      monacoInstance.languages.register({ id: 'mips' });
-
-      monacoInstance.languages.setMonarchTokensProvider('mips', {
-        tokenizer: {
-          root: [
-            [/;.*$/, 'comment'],
-            [/#.*$/, 'comment'],
-            [/\$[svat][0-9]|\$[raesp]|\$[zero]|\$[f][0-9]{1,2}/, 'variable'],
-            [/\$[0-9]{1,2}/, 'variable'],
-            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|sllv|srlv|srav|mult|multu|div|divu|mfhi|mflo|mthi|mtlo|jr|jalr|syscall|break|nop|mtc1|mfc1|add\.s|sub\.s|mul\.s|div\.s|cvt\.s\.w|swc1|lwc1)\b/, 'keyword'],
-            [/\b(addi|addiu|andi|ori|xori|slti|sltiu|lui|lw|sw|lb|lbu|lh|lhu|sb|sh|beq|bne|bltz|bgez|blez|bgtz|j|jal|li|la|move|bge|ble|bgt|blt|beqz|bnez)\b/, 'keyword'],
-            [/^\.[a-zA-Z]+/, 'directive'],
-            [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
-            [/\b\d+\b/, 'number'],
-            [/0x[0-9a-fA-F]+\b/, 'number'],
-            [/".*?"/, 'string'],
-          ],
-        },
-      });
-
-      monacoInstance.languages.setLanguageConfiguration('mips', {
-        comments: { lineComment: '#' },
-        brackets: [['(', ')']],
-        autoClosingPairs: [{ open: '(', close: ')' }],
-        surroundingPairs: [{ open: '(', close: ')' }],
-      });
-    }
   }
 
   function handleEditorChange(value: string | undefined) {
@@ -163,7 +163,7 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
       <Editor
         height="100%"
         language="mips"
-        theme="dynamic-theme"
+        theme={`dynamic-theme-${theme.name.replace(/\s+/g, '-')}`}
         value={code}
         onMount={handleEditorDidMount}
         onChange={handleEditorChange}
