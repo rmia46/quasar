@@ -73,6 +73,14 @@ pub enum MipsInstruction {
     Beqz { rs: usize, label: String },
     Bnez { rs: usize, label: String },
 
+    // Floating Point (Coprocessor 1)
+    Mtc1  { rt: usize, fs: usize },
+    Mfc1  { rt: usize, fs: usize },
+    CvtSW { fd: usize, fs: usize },
+    AddS  { fd: usize, fs: usize, ft: usize },
+    Swc1  { ft: usize, rs: usize, offset: i32 },
+    Lwc1  { ft: usize, rs: usize, offset: i32 },
+
     // Special
     Syscall,
     Break,

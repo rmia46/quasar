@@ -1,35 +1,46 @@
-use serde::{Serialize, Deserialize};
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RegisterFile {
-    values: [u32; 32],
+    pub gpr: [u32; 32],
+    pub fpr: [f32; 32], // Floating point registers
     pub hi: u32,
     pub lo: u32,
 }
 
 impl RegisterFile {
     pub fn new() -> Self {
-        RegisterFile { values: [0; 32], hi: 0, lo: 0 }
+        RegisterFile {
+            gpr: [0; 32],
+            fpr: [0.0; 32],
+            hi: 0,
+            lo: 0,
+        }
     }
 
     pub fn read(&self, index: usize) -> u32 {
         if index == 0 { return 0; }
-        self.values[index]
+        self.gpr[index]
     }
 
     pub fn write(&mut self, index: usize, value: u32) {
-        if index != 0 && index < 32 {
-            self.values[index] = value;
-        }
+        if index == 0 { return; }
+        self.gpr[index] = value;
     }
 
-    pub fn get_all(&self) -> [u32; 32] {
-        self.values
+    pub fn read_fp(&self, index: usize) -> f32 {
+        self.fpr[index]
+    }
+
+    pub fn write_fp(&mut self, index: usize, value: f32) {
+        self.fpr[index] = value;
     }
 
     pub fn reset(&mut self) {
-        self.values = [0; 32];
+        self.gpr = [0; 32];
+        self.fpr = [0.0; 32];
         self.hi = 0;
         self.lo = 0;
+    }
+
+    pub fn get_all(&self) -> [u32; 32] {
+        self.gpr
     }
 }

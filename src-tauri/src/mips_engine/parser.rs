@@ -117,6 +117,20 @@ impl Parser {
             "blt"  => Ok(Some(ParseResult::Instruction(MipsInstruction::Blt { rs: Self::reg(parts[1])?, rt: Self::reg(parts[2])?, label: parts[3].to_string() }))),
             "beqz" => Ok(Some(ParseResult::Instruction(MipsInstruction::Beqz { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             "bnez" => Ok(Some(ParseResult::Instruction(MipsInstruction::Bnez { rs: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+
+            // Floating Point
+            "mtc1" => Ok(Some(ParseResult::Instruction(MipsInstruction::Mtc1 { rt: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
+            "mfc1" => Ok(Some(ParseResult::Instruction(MipsInstruction::Mfc1 { rt: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
+            "cvt.s.w" => Ok(Some(ParseResult::Instruction(MipsInstruction::CvtSW { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
+            "add.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::AddS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "swc1" => {
+                let (offset, rs) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Swc1 { ft: Self::reg(parts[1])?, rs, offset })))
+            },
+            "lwc1" => {
+                let (offset, rs) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lwc1 { ft: Self::reg(parts[1])?, rs, offset })))
+            },
             
             // J-Type
             "j"    => Ok(Some(ParseResult::Instruction(MipsInstruction::J    { label: parts[1].to_string() }))),
@@ -162,6 +176,12 @@ impl Parser {
 
     fn reg(s: &str) -> Result<usize, String> {
         let s = s.trim_start_matches('$');
+        // Handle floating point registers $f0 - $f31
+        if s.starts_with('f') {
+            if let Ok(idx) = s[1..].parse::<usize>() {
+                if idx < 32 { return Ok(idx); }
+            }
+        }
         match s {
             "zero" | "0" => Ok(0), "at" | "1" => Ok(1),
             "v0" | "2" => Ok(2), "v1" | "3" => Ok(3),

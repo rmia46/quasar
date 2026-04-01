@@ -35,6 +35,7 @@ import { ConfigService, Settings, DEFAULT_SETTINGS } from './services/configServ
 
 interface SimulatorState {
   registers: number[];
+  fp_registers: number[];
   hi: number;
   lo: number;
   pc: number;
@@ -70,6 +71,28 @@ function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'core' | 'cp1' | 'memory'>('core');
+  const [sidebarWidth, setSidebarWidth] = useState(350);
+
+  const startResizingSidebar = (mouseDownEvent: React.MouseEvent) => {
+    const startX = mouseDownEvent.clientX;
+    const startWidth = sidebarWidth;
+
+    const onMouseMove = (mouseMoveEvent: MouseEvent) => {
+      const newWidth = startWidth - (mouseMoveEvent.clientX - startX);
+      if (newWidth > 250 && newWidth < 600) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
   const editorRef = useRef<any>(null);
   const untitledCounter = useRef(1);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -180,6 +203,7 @@ function App() {
 
   const [state, setState] = useState<SimulatorState>({
     registers: new Array(32).fill(0),
+    fp_registers: new Array(32).fill(0),
     hi: 0,
     lo: 0,
     pc: 0,
@@ -695,12 +719,75 @@ function App() {
           <Console output={consoleOutput} isCollapsed={isConsoleCollapsed} onToggle={() => setIsConsoleCollapsed(!isConsoleCollapsed)} height={consoleHeight} />
         </div>
 
-        <aside className="w-80 flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] p-4 gap-4 border-l border-[var(--border)]">
-          <div className="flex-1 overflow-hidden">
-            <RegisterView registers={state.registers} changedIndices={changedIndices} hi={state.hi} lo={state.lo} hiLoChanged={hiLoChanged} />
+        {/* Resizer Handle */}
+        <div 
+          onMouseDown={startResizingSidebar} 
+          className="w-1 bg-[var(--border)] hover:bg-[var(--accent)] cursor-col-resize flex items-center justify-center transition-colors group z-10"
+        />
+
+        <aside 
+          className="flex flex-col shrink-0 overflow-hidden bg-[var(--sidebar-background)] border-l border-[var(--border)]"
+          style={{ width: `${sidebarWidth}px` }}
+        >
+          {/* Sidebar Tabs */}
+          <div className="flex items-center h-9 bg-[var(--toolbar-background)] border-b border-[var(--border)] shrink-0">
+            <button 
+              onClick={() => setActiveSidebarTab('core')}
+              className={`flex-1 h-full text-[9px] font-black uppercase tracking-widest transition-all
+                ${activeSidebarTab === 'core' 
+                  ? 'text-[var(--accent)] bg-[var(--app-background)]' 
+                  : 'text-[var(--app-foreground)] opacity-40 hover:opacity-100 hover:bg-[var(--tab-active)]'}`}
+            >
+              Core
+            </button>
+            <div className="w-px h-4 bg-[var(--border)]" />
+            <button 
+              onClick={() => setActiveSidebarTab('cp1')}
+              className={`flex-1 h-full text-[9px] font-black uppercase tracking-widest transition-all
+                ${activeSidebarTab === 'cp1' 
+                  ? 'text-[var(--accent)] bg-[var(--app-background)]' 
+                  : 'text-[var(--app-foreground)] opacity-40 hover:opacity-100 hover:bg-[var(--tab-active)]'}`}
+            >
+              CP1
+            </button>
+            <div className="w-px h-4 bg-[var(--border)]" />
+            <button 
+              onClick={() => setActiveSidebarTab('memory')}
+              className={`flex-1 h-full text-[9px] font-black uppercase tracking-widest transition-all
+                ${activeSidebarTab === 'memory' 
+                  ? 'text-[var(--accent)] bg-[var(--app-background)]' 
+                  : 'text-[var(--app-foreground)] opacity-40 hover:opacity-100 hover:bg-[var(--tab-active)]'}`}
+            >
+              Memory
+            </button>
           </div>
-          <div className="h-72 overflow-hidden">
-            <MemoryView memory={state.memory_sample} />
+
+          <div className="flex-1 overflow-hidden p-4">
+            {activeSidebarTab === 'core' && (
+              <RegisterView 
+                registers={state.registers} 
+                fp_registers={[]}
+                view="core"
+                changedIndices={changedIndices} 
+                hi={state.hi} 
+                lo={state.lo} 
+                hiLoChanged={hiLoChanged} 
+              />
+            )}
+            {activeSidebarTab === 'cp1' && (
+              <RegisterView 
+                registers={[]} 
+                fp_registers={state.fp_registers}
+                view="cp1"
+                changedIndices={[]} 
+                hi={0} 
+                lo={0} 
+                hiLoChanged={{hi: false, lo: false}} 
+              />
+            )}
+            {activeSidebarTab === 'memory' && (
+              <MemoryView memory={state.memory_sample} />
+            )}
           </div>
         </aside>
       </main>

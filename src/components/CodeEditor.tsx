@@ -119,9 +119,9 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
           root: [
             [/;.*$/, 'comment'],
             [/#.*$/, 'comment'],
-            [/\$[svat][0-9]|\$[raesp]|\$[zero]/, 'variable'],
+            [/\$[svat][0-9]|\$[raesp]|\$[zero]|\$[f][0-9]{1,2}/, 'variable'],
             [/\$[0-9]{1,2}/, 'variable'],
-            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|sllv|srlv|srav|mult|multu|div|divu|mfhi|mflo|mthi|mtlo|jr|jalr|syscall|break|nop)\b/, 'keyword'],
+            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|sllv|srlv|srav|mult|multu|div|divu|mfhi|mflo|mthi|mtlo|jr|jalr|syscall|break|nop|mtc1|mfc1|add\.s|sub\.s|mul\.s|div\.s|cvt\.s\.w|swc1|lwc1)\b/, 'keyword'],
             [/\b(addi|addiu|andi|ori|xori|slti|sltiu|lui|lw|sw|lb|lbu|lh|lhu|sb|sh|beq|bne|bltz|bgez|blez|bgtz|j|jal|li|la|move|bge|ble|bgt|blt|beqz|bnez)\b/, 'keyword'],
             [/^\.[a-zA-Z]+/, 'directive'],
             [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],

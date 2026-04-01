@@ -72,6 +72,15 @@ impl Memory {
         self.storage[0..std::cmp::min(size, self.storage.len())].to_vec()
     }
 
+    pub fn get_sample_at(&self, start: u32, size: usize) -> Vec<u8> {
+        let start = start as usize;
+        let end = std::cmp::min(start + size, self.storage.len());
+        if start >= self.storage.len() {
+            return vec![0; size];
+        }
+        self.storage[start..end].to_vec()
+    }
+
     pub fn reset(&mut self) {
         self.storage.fill(0);
     }

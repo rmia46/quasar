@@ -17,6 +17,7 @@ const DATA_SEGMENT_START: u32 = 0x2000;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SimulatorState {
     pub registers: [u32; 32],
+    pub fp_registers: [u32; 32],
     pub hi: u32,
     pub lo: u32,
     pub pc: u32,
@@ -389,6 +390,37 @@ impl MipsEngine {
                 }
             },
 
+            // Floating Point
+            MipsInstruction::Mtc1 { rt, fs } => {
+                let val = self.registers.read(rt);
+                // Interpret u32 bits as f32 (bit-for-bit move)
+                self.registers.write_fp(fs, f32::from_bits(val));
+            },
+            MipsInstruction::Mfc1 { rt, fs } => {
+                let val = self.registers.read_fp(fs).to_bits();
+                self.registers.write(rt, val);
+            },
+            MipsInstruction::CvtSW { fd, fs } => {
+                let bits = self.registers.read_fp(fs).to_bits();
+                let int_val = bits as i32;
+                self.registers.write_fp(fd, int_val as f32);
+            },
+            MipsInstruction::AddS { fd, fs, ft } => {
+                let s = self.registers.read_fp(fs);
+                let t = self.registers.read_fp(ft);
+                self.registers.write_fp(fd, s + t);
+            },
+            MipsInstruction::Swc1 { ft, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32 + offset) as u32;
+                let val = self.registers.read_fp(ft).to_bits();
+                self.memory.write_word(addr, val)?;
+            },
+            MipsInstruction::Lwc1 { ft, rs, offset } => {
+                let addr = (self.registers.read(rs) as i32 + offset) as u32;
+                let val = self.memory.read_word(addr)?;
+                self.registers.write_fp(ft, f32::from_bits(val));
+            },
+
             // Special
             MipsInstruction::Syscall => {
                 let v0 = self.registers.read(2);
@@ -455,11 +487,12 @@ impl MipsEngine {
 
         SimulatorState {
             registers: self.registers.get_all(),
+            fp_registers: self.registers.fpr.map(|f| f.to_bits()),
             hi: self.registers.hi,
             lo: self.registers.lo,
             pc: self.pc * 4,
             current_line,
-            memory_sample: self.memory.get_sample(128),
+            memory_sample: self.memory.get_sample_at(DATA_SEGMENT_START, 128),
             message: combined_message,
         }
     }
