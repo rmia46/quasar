@@ -11,8 +11,6 @@ import {
   Save, 
   StepForward, 
   Code,
-  ChevronRight,
-  Monitor,
   X,
   Circle,
   Undo,
@@ -21,7 +19,8 @@ import {
   Minus,
   Square,
   Copy,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import RegisterView from './components/RegisterView';
@@ -705,17 +704,6 @@ function App() {
           </div>
         </aside>
       </main>
-
-      <footer className="h-6 bg-blue-600 flex items-center px-4 justify-between shrink-0 text-[10px] font-bold text-white uppercase tracking-wider z-20">
-        <div className="flex items-center gap-6">
-          <span className="flex items-center gap-1.5"><Monitor size={12} />{isTauri() ? "Hardware Connected" : "Local Emulation Mode"}</span>
-          <span className="flex items-center gap-1"><ChevronRight size={12} />PC: 0x{state.pc.toString(16).padStart(8, '0').toUpperCase()}</span>
-        </div>
-        <div className="flex items-center gap-4 opacity-90">
-          <span>{isModified ? "UNSAVED CHANGES" : "SAVED"}</span>
-          <span>MIPS Assembly</span>
-        </div>
-      </footer>
 
       {/* Settings Dialog */}
       {isSettingsOpen && (
