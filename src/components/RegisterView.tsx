@@ -24,7 +24,7 @@ const RegisterView: React.FC<RegisterViewProps> = React.memo(({ registers, chang
       <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
         {/* Special Purpose Section */}
         <div className="mb-4">
-          <div className="flex items-center text-[9px] font-black uppercase tracking-[0.2em] text-blue-500 opacity-60 px-2 py-1 mb-1">
+          <div className="flex items-center text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] opacity-60 px-2 py-1 mb-1">
             Special Purpose
           </div>
           <div className="grid grid-cols-1 gap-1">
@@ -35,9 +35,9 @@ const RegisterView: React.FC<RegisterViewProps> = React.memo(({ registers, chang
               <div 
                 key={reg.name} 
                 className={`flex items-center justify-between py-1 px-2 rounded-md transition-all duration-500
-                  ${reg.isChanged ? 'bg-orange-500/20 shadow-[inset_0_0_8px_rgba(249,115,22,0.1)]' : 'hover:bg-[var(--tab-active)]'}`}
+                  ${reg.isChanged ? 'bg-[var(--accent)]/20 shadow-[inset_0_0_8px_rgba(249,115,22,0.1)]' : 'hover:bg-[var(--tab-active)]'}`}
               >
-                <span className={`w-16 text-xs font-mono font-bold ${reg.isChanged ? 'text-orange-500' : 'text-blue-500'}`}>{reg.name}</span>
+                <span className={`w-16 text-xs font-mono font-bold ${reg.isChanged ? 'text-[var(--accent)]' : 'text-[var(--accent)]'}`}>{reg.name}</span>
                 <span className="flex-1 text-center text-xs font-mono text-[var(--app-foreground)] opacity-80">
                   0x{reg.val.toString(16).padStart(8, '0').toUpperCase()}
                 </span>
@@ -51,7 +51,7 @@ const RegisterView: React.FC<RegisterViewProps> = React.memo(({ registers, chang
 
         {/* General Purpose Section */}
         <div>
-          <div className="flex items-center text-[9px] font-black uppercase tracking-[0.2em] text-blue-500 opacity-60 px-2 py-1 mb-1">
+          <div className="flex items-center text-[9px] font-black uppercase tracking-[0.2em] text-[var(--accent)] opacity-60 px-2 py-1 mb-1">
             General Purpose
           </div>
           <div className="grid grid-cols-1 gap-1">
@@ -70,9 +70,9 @@ const RegisterView: React.FC<RegisterViewProps> = React.memo(({ registers, chang
                 <div 
                   key={name} 
                   className={`flex items-center justify-between py-1 px-2 rounded-md transition-all duration-500
-                    ${isChanged ? 'bg-orange-500/20 shadow-[inset_0_0_8px_rgba(249,115,22,0.1)]' : 'hover:bg-[var(--tab-active)]'}`}
+                    ${isChanged ? 'bg-[var(--accent)]/20 shadow-[inset_0_0_8px_rgba(249,115,22,0.1)]' : 'hover:bg-[var(--tab-active)]'}`}
                 >
-                  <span className={`w-16 text-xs font-mono font-medium ${isChanged ? 'text-orange-500' : 'text-blue-600 dark:text-blue-400'}`}>{name}</span>
+                  <span className={`w-16 text-xs font-mono font-medium ${isChanged ? 'text-[var(--accent)]' : 'text-[var(--accent)] dark:text-[var(--accent)]'}`}>{name}</span>
                   <span className="flex-1 text-center text-xs font-mono text-[var(--app-foreground)] opacity-80">
                     0x{hex}
                   </span>

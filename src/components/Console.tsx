@@ -75,8 +75,8 @@ const Console: React.FC<ConsoleProps> = React.memo(({ output, isCollapsed, onTog
     switch (type) {
       case 'error': return 'text-red-500 bg-red-500/5 border-l-2 border-red-500';
       case 'success': return 'text-green-500 bg-green-500/5 border-l-2 border-green-500';
-      case 'syscall': return 'text-blue-500 bg-blue-500/5 border-l-2 border-blue-500';
-      case 'info': return 'text-orange-500 bg-orange-500/5 border-l-2 border-orange-500';
+      case 'syscall': return 'text-[var(--accent)] bg-[var(--accent)]/5 border-l-2 border-[var(--accent)]';
+      case 'info': return 'text-[var(--accent)] bg-[var(--accent)]/5 border-l-2 border-[var(--accent)]';
       default: return 'text-[var(--console-foreground)] border-l-2 border-transparent';
     }
   };
@@ -108,7 +108,7 @@ const Console: React.FC<ConsoleProps> = React.memo(({ output, isCollapsed, onTog
           </span>
           {parsedLines.length > 0 && (
             <div className="flex items-center gap-2 ml-2">
-              <span className="px-1.5 py-0.5 bg-blue-600/20 text-blue-500 text-[9px] font-black rounded-md">
+              <span className="px-1.5 py-0.5 bg-[var(--accent)]/20 text-[var(--accent)] text-[9px] font-black rounded-md">
                 {parsedLines.length} LINES
               </span>
               <button 
@@ -116,7 +116,7 @@ const Console: React.FC<ConsoleProps> = React.memo(({ output, isCollapsed, onTog
                 className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-all text-[9px] font-bold uppercase tracking-wider
                   ${copied 
                     ? 'bg-green-500/20 text-green-500' 
-                    : 'bg-[var(--app-background)] border border-[var(--border)] text-[var(--app-foreground)] opacity-60 hover:opacity-100 hover:border-blue-500/50'}
+                    : 'bg-[var(--app-background)] border border-[var(--border)] text-[var(--app-foreground)] opacity-60 hover:opacity-100 hover:border-[var(--accent)]/50'}
                 `}
               >
                 {copied ? <Check size={10} /> : <Copy size={10} />}

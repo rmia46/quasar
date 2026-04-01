@@ -121,7 +121,9 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
             [/#.*$/, 'comment'],
             [/\$[svat][0-9]|\$[raesp]|\$[zero]/, 'variable'],
             [/\$[0-9]{1,2}/, 'variable'],
-            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|jr|jal|j|beq|bne|lw|sw|lb|sb|lh|sh|li|syscall|move|nop|break|lui|xori)\b/, 'keyword'],
+            [/\b(add|addu|sub|subu|and|or|xor|nor|slt|sltu|sll|srl|sra|sllv|srlv|srav|mult|multu|div|divu|mfhi|mflo|mthi|mtlo|jr|jalr|syscall|break|nop)\b/, 'keyword'],
+            [/\b(addi|addiu|andi|ori|xori|slti|sltiu|lui|lw|sw|lb|lbu|lh|lhu|sb|sh|beq|bne|bltz|bgez|blez|bgtz|j|jal|li|la|move|bge|ble|bgt|blt|beqz|bnez)\b/, 'keyword'],
+            [/^\.[a-zA-Z]+/, 'directive'],
             [/^[a-zA-Z_\-][a-zA-Z0-9_\-]*:/, 'tag'],
             [/\b\d+\b/, 'number'],
             [/0x[0-9a-fA-F]+\b/, 'number'],
@@ -149,11 +151,11 @@ const CodeEditor: React.FC<CodeEditorProps> = React.memo(({
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         .current-instruction-highlight {
-          background: rgba(30, 144, 255, 0.2) !important;
-          border-left: 3px solid #1e90ff !important;
+          background: rgba(254, 148, 66, 0.15) !important;
+          border-left: 3px solid #fe9442 !important;
         }
         .current-instruction-glyph {
-          background: #1e90ff;
+          background: #fe9442;
           width: 5px !important;
           margin-left: 5px;
         }

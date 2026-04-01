@@ -9,6 +9,7 @@ export interface ThemeColors {
   "border": string;
   "console.background": string;
   "console.foreground": string;
+  "accent": string;
 }
 
 export interface EditorTheme {
@@ -34,25 +35,27 @@ export const QUASAR_DARK: AppTheme = {
   colors: {
     "app.background": "#0d0d0d",
     "app.foreground": "#d4d4d4",
-    "tab.active": "#1e1e1e",
-    "tab.inactive": "#252526",
-    "tab.border": "#1e1e1e",
-    "toolbar.background": "#1a1a1a",
+    "tab.active": "#1a1a1a",
+    "tab.inactive": "#0d0d0d",
+    "tab.border": "#1a1a1a",
+    "toolbar.background": "#141414",
     "sidebar.background": "#0d0d0d",
-    "border": "#2a2a2a",
-    "console.background": "#0a0a0a",
-    "console.foreground": "#cccccc",
+    "border": "#222222",
+    "console.background": "#050505",
+    "console.foreground": "#a0a0a0",
+    "accent": "#fe9442",
   },
   editor: {
-    background: "#1e1e1e",
+    background: "#0d0d0d",
     foreground: "#d4d4d4",
     tokens: [
-      { token: 'comment', foreground: '6A9955' },
-      { token: 'variable', foreground: '4FC1FF' },
-      { token: 'keyword', foreground: 'C586C0' },
-      { token: 'tag', foreground: 'FFD700' },
-      { token: 'number', foreground: 'B5CEA8' },
-      { token: 'string', foreground: 'CE9178' },
+      { token: 'comment', foreground: '606060', fontStyle: 'italic' },
+      { token: 'variable', foreground: '38bdf8' },
+      { token: 'keyword', foreground: 'fe9442' },
+      { token: 'tag', foreground: 'f472b6' },
+      { token: 'number', foreground: '4ade80' },
+      { token: 'string', foreground: 'fbbf24' },
+      { token: 'directive', foreground: 'a78bfa' },
     ]
   }
 };
@@ -61,27 +64,29 @@ export const QUASAR_LIGHT: AppTheme = {
   name: "Quasar Light",
   type: "light",
   colors: {
-    "app.background": "#f3f3f3",
-    "app.foreground": "#333333",
+    "app.background": "#fcfcfc",
+    "app.foreground": "#2d2d2d",
     "tab.active": "#ffffff",
-    "tab.inactive": "#e8e8e8",
-    "tab.border": "#ddd",
+    "tab.inactive": "#f3f3f3",
+    "tab.border": "#e5e5e5",
     "toolbar.background": "#ffffff",
-    "sidebar.background": "#f3f3f3",
-    "border": "#ddd",
-    "console.background": "#ffffff",
-    "console.foreground": "#333333",
+    "sidebar.background": "#f8f8f8",
+    "border": "#e8e8e8",
+    "console.background": "#fdfdfd",
+    "console.foreground": "#444444",
+    "accent": "#fe9442",
   },
   editor: {
     background: "#ffffff",
-    foreground: "#000000",
+    foreground: "#2d2d2d",
     tokens: [
-      { token: 'comment', foreground: '008000' },
-      { token: 'variable', foreground: '0000FF' },
-      { token: 'keyword', foreground: 'AF00DB' },
-      { token: 'tag', foreground: '808000' },
-      { token: 'number', foreground: '098677' },
-      { token: 'string', foreground: 'A31515' },
+      { token: 'comment', foreground: '919191', fontStyle: 'italic' },
+      { token: 'variable', foreground: '0284c7' },
+      { token: 'keyword', foreground: 'fe9442' },
+      { token: 'tag', foreground: 'db2777' },
+      { token: 'number', foreground: '16a34a' },
+      { token: 'string', foreground: 'd97706' },
+      { token: 'directive', foreground: '7c3aed' },
     ]
   }
 };

@@ -571,13 +571,13 @@ function App() {
           <ToolbarButton icon={<Redo size={18} />} label="Redo" onClick={handleRedo} />
           <div className="w-px h-6 bg-[var(--border)] mx-3" />
           <ToolbarButton icon={<Play size={18} className="text-green-500 fill-green-500/10" />} label="Run" onClick={handleRun} />
-          <ToolbarButton icon={<StepForward size={18} className="text-blue-500" />} label="Step" onClick={handleStep} />
-          <ToolbarButton icon={<RotateCcw size={18} className="text-orange-500" />} label="Reset" onClick={handleReset} />
+          <ToolbarButton icon={<StepForward size={18} className="text-[var(--accent)]" />} label="Step" onClick={handleStep} />
+          <ToolbarButton icon={<RotateCcw size={18} className="text-[var(--accent)]" />} label="Reset" onClick={handleReset} />
         </div>
 
         <div className="flex items-center gap-4">
             <ToolbarButton icon={<HelpCircle size={18} />} label="Help" onClick={() => setIsHelpOpen(true)} />
-            <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-[10px] font-black text-[var(--accent)] dark:text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/20 px-3 py-1.5 rounded-full uppercase tracking-widest">
                 MIPS32 R2000
             </div>
         </div>
@@ -613,7 +613,7 @@ function App() {
                           : 'bg-[var(--tab-inactive)] text-[var(--app-foreground)] opacity-50 hover:opacity-100'}
                       `}
                     >
-                        <Code size={14} className={file.isModified ? 'text-blue-500' : 'opacity-50'} />
+                        <Code size={14} className={file.isModified ? 'text-[var(--accent)]' : 'opacity-50'} />
                         <span className="truncate flex-1">{file.name}{file.isModified ? '*' : ''}</span>
                         <button 
                           className="ml-1 p-0.5 hover:bg-[var(--app-background)] opacity-50 hover:opacity-100 rounded-sm transition-colors group"
@@ -623,7 +623,7 @@ function App() {
                           }}
                         >
                           {file.isModified ? (
-                            <Circle size={8} fill="currentColor" className="text-blue-500" />
+                            <Circle size={8} fill="currentColor" className="text-[var(--accent)]" />
                           ) : (
                             <X size={12} className="group-hover:text-red-500" />
                           )}
@@ -663,7 +663,7 @@ function App() {
                   />
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-[var(--app-background)]">
-                    <div className="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center mb-6 border border-blue-500/20">
+                    <div className="w-20 h-20 bg-[var(--accent)]/10 rounded-3xl flex items-center justify-center mb-6 border border-[var(--accent)]/20">
                       <img src="/quasar-logo.svg" alt="Quasar" className="w-12 h-12 opacity-40" />
                     </div>
                     <h2 className="text-xl font-bold text-[var(--app-foreground)] opacity-80 mb-2">Welcome to Quasar</h2>
@@ -673,7 +673,7 @@ function App() {
                     <div className="flex gap-3">
                       <button 
                         onClick={handleNewFile}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                        className="px-6 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent)] text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-95"
                       >
                         New File
                       </button>
@@ -689,7 +689,7 @@ function App() {
              </div>
           </div>
 
-          <div onMouseDown={startResizing} className="h-1 bg-[var(--border)] hover:bg-blue-500 cursor-row-resize flex items-center justify-center transition-colors group z-10">
+          <div onMouseDown={startResizing} className="h-1 bg-[var(--border)] hover:bg-[var(--accent)] cursor-row-resize flex items-center justify-center transition-colors group z-10">
           </div>
 
           <Console output={consoleOutput} isCollapsed={isConsoleCollapsed} onToggle={() => setIsConsoleCollapsed(!isConsoleCollapsed)} height={consoleHeight} />
@@ -733,7 +733,7 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative h-full" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-      <button className="text-[11px] px-3 h-full hover:bg-blue-600/10 rounded-md text-[var(--app-foreground)] opacity-70 hover:opacity-100 transition-all cursor-pointer font-medium">
+      <button className="text-[11px] px-3 h-full hover:bg-[var(--accent)]/10 rounded-md text-[var(--app-foreground)] opacity-70 hover:opacity-100 transition-all cursor-pointer font-medium">
         {label}
       </button>
       {isOpen && (
@@ -747,7 +747,7 @@ function MenuButton({ label, items }: { label: string, items: any[] }) {
                 item.onClick?.();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-[11px] text-[var(--app-foreground)] opacity-70 hover:opacity-100 hover:bg-blue-600 hover:text-white transition-all cursor-pointer flex items-center justify-between group"
+              className="w-full text-left px-4 py-2 text-[11px] text-[var(--app-foreground)] opacity-70 hover:opacity-100 hover:bg-[var(--accent)] hover:text-white transition-all cursor-pointer flex items-center justify-between group"
             >
               <span>{item.label}</span>
               {item.shortcut && <span className="text-[9px] opacity-40 group-hover:opacity-100 font-mono tracking-tighter">{item.shortcut}</span>}
@@ -766,8 +766,8 @@ function ToolbarButton({ icon, label, onClick, primary = false }: { icon: React.
       className={`
         flex flex-col items-center justify-center gap-1 w-14 h-11 rounded-xl transition-all active:scale-90 cursor-pointer group
         ${primary 
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500' 
-          : 'hover:bg-blue-600/5 text-[var(--app-foreground)] opacity-60 hover:opacity-100 border border-transparent hover:border-blue-600/10'}
+          ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20 hover:bg-[var(--accent)]' 
+          : 'hover:bg-[var(--accent)]/5 text-[var(--app-foreground)] opacity-60 hover:opacity-100 border border-transparent hover:border-[var(--accent)]/10'}
       `} 
       title={label}
     >
@@ -787,7 +787,7 @@ function WindowControlButton({ icon, onClick, isClose = false }: { icon: React.R
         h-7 w-10 flex items-center justify-center rounded-lg transition-all duration-200
         ${isClose 
           ? 'hover:bg-red-500 hover:text-white text-red-500/70' 
-          : 'hover:bg-blue-600/10 text-[var(--app-foreground)] opacity-40 hover:opacity-100'}
+          : 'hover:bg-[var(--accent)]/10 text-[var(--app-foreground)] opacity-40 hover:opacity-100'}
       `}
     >
       {icon}

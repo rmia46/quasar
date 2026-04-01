@@ -43,7 +43,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
         {/* Sidebar */}
         <aside className="w-[220px] bg-[var(--sidebar-background)] border-r border-[var(--border)] flex flex-col">
           <div className="px-7 py-6 flex items-center gap-3 border-b border-[var(--border)]">
-            <SettingsIcon size={20} className="text-blue-500" />
+            <SettingsIcon size={20} className="text-[var(--accent)]" />
             <h2 className="text-[12px] font-bold uppercase tracking-[0.2em] text-[var(--app-foreground)] opacity-70">Settings</h2>
           </div>
           
@@ -55,7 +55,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
                 className={`
                   w-full flex items-center gap-3 px-5 py-3 rounded-xl text-[12px] font-bold transition-all
                   ${activeCategory === cat.id 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                    ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' 
                     : 'text-[var(--app-foreground)] opacity-50 hover:opacity-100 hover:bg-[var(--tab-active)]'}
                 `}
               >
@@ -84,16 +84,16 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
             {activeCategory === 'general' && (
               <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-300">
                 <section className="space-y-5">
-                  <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-500 opacity-80">Automation</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-widest text-[var(--accent)] opacity-80">Automation</h4>
                   <div 
                     onClick={() => onUpdate({ ...settings, autoSaveBeforeRun: !settings.autoSaveBeforeRun })}
-                    className="flex items-center justify-between p-5 bg-[var(--sidebar-background)] border border-[var(--border)] rounded-2xl cursor-pointer hover:border-blue-500/30 transition-all"
+                    className="flex items-center justify-between p-5 bg-[var(--sidebar-background)] border border-[var(--border)] rounded-2xl cursor-pointer hover:border-[var(--accent)]/30 transition-all"
                   >
                     <div>
                       <h4 className="text-sm font-bold text-[var(--app-foreground)]">Auto-Save before Run</h4>
                       <p className="text-[11px] text-[var(--app-foreground)] opacity-40 mt-1">Automatically save changes to disk before starting simulation.</p>
                     </div>
-                    <div className={`w-12 h-6 rounded-full relative transition-colors ${settings.autoSaveBeforeRun ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                    <div className={`w-12 h-6 rounded-full relative transition-colors ${settings.autoSaveBeforeRun ? 'bg-[var(--accent)]' : 'bg-gray-600'}`}>
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.autoSaveBeforeRun ? 'left-7' : 'left-1'}`} />
                     </div>
                   </div>
@@ -125,7 +125,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
                         value={localFontSize} 
                         onChange={(e) => handleFontSizeChange(e.target.value)}
                         onBlur={handleFontSizeBlur}
-                        className="w-20 bg-[var(--sidebar-background)] border border-[var(--border)] px-4 py-2 text-sm font-bold rounded-xl text-[var(--app-foreground)] text-center focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
+                        className="w-20 bg-[var(--sidebar-background)] border border-[var(--border)] px-4 py-2 text-sm font-bold rounded-xl text-[var(--app-foreground)] text-center focus:outline-none focus:border-[var(--accent)] transition-colors shadow-sm"
                       />
                       <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">px</span>
                     </div>
@@ -144,7 +144,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
                           className={`
                             px-4 py-1.5 text-xs font-bold rounded-lg transition-all
                             ${settings.tabSize === size 
-                              ? 'bg-blue-600 text-white shadow-md' 
+                              ? 'bg-[var(--accent)] text-white shadow-md' 
                               : 'text-[var(--app-foreground)] opacity-50 hover:opacity-100'}
                           `}
                         >
@@ -161,10 +161,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
               <div className="space-y-10 animate-in slide-in-from-bottom-2 duration-300">
                 <section className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-500 opacity-80">Color Themes</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-[var(--accent)] opacity-80">Color Themes</h4>
                     <button 
                       onClick={onLoadTheme}
-                      className="text-[11px] font-bold bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white px-5 py-2 rounded-full transition-all"
+                      className="text-[11px] font-bold bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white px-5 py-2 rounded-full transition-all"
                     >
                       Load Custom Theme...
                     </button>
@@ -173,31 +173,31 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => onUpdate({ ...settings, theme: QUASAR_DARK })}
-                      className={`p-4 border rounded-xl text-left transition-all group ${settings.theme.name === QUASAR_DARK.name ? 'border-blue-500 bg-blue-500/5' : 'border-[var(--border)] hover:border-blue-500/30 bg-[var(--sidebar-background)]'}`}
+                      className={`p-4 border rounded-xl text-left transition-all group ${settings.theme.name === QUASAR_DARK.name ? 'border-[var(--accent)] bg-[var(--accent)]/5' : 'border-[var(--border)] hover:border-[var(--accent)]/30 bg-[var(--sidebar-background)]'}`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-[var(--app-foreground)]">Quasar Dark</span>
-                        {settings.theme.name === QUASAR_DARK.name && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        {settings.theme.name === QUASAR_DARK.name && <div className="w-2 h-2 bg-[var(--accent)] rounded-full" />}
                       </div>
                       <div className="text-[10px] text-[var(--app-foreground)] opacity-40 mt-1">Default high-contrast dark theme.</div>
                     </button>
 
                     <button 
                       onClick={() => onUpdate({ ...settings, theme: QUASAR_LIGHT })}
-                      className={`p-4 border rounded-xl text-left transition-all group ${settings.theme.name === QUASAR_LIGHT.name ? 'border-blue-500 bg-blue-500/5' : 'border-[var(--border)] hover:border-blue-500/30 bg-[var(--sidebar-background)]'}`}
+                      className={`p-4 border rounded-xl text-left transition-all group ${settings.theme.name === QUASAR_LIGHT.name ? 'border-[var(--accent)] bg-[var(--accent)]/5' : 'border-[var(--border)] hover:border-[var(--accent)]/30 bg-[var(--sidebar-background)]'}`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-[var(--app-foreground)]">Quasar Light</span>
-                        {settings.theme.name === QUASAR_LIGHT.name && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        {settings.theme.name === QUASAR_LIGHT.name && <div className="w-2 h-2 bg-[var(--accent)] rounded-full" />}
                       </div>
                       <div className="text-[10px] text-[var(--app-foreground)] opacity-40 mt-1">Clean and classic light theme.</div>
                     </button>
 
                     {settings.theme.name !== QUASAR_DARK.name && settings.theme.name !== QUASAR_LIGHT.name && (
-                      <div className="p-4 border border-blue-500 bg-blue-500/5 rounded-xl text-left col-span-2">
+                      <div className="p-4 border border-[var(--accent)] bg-[var(--accent)]/5 rounded-xl text-left col-span-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-[var(--app-foreground)]">{settings.theme.name}</span>
-                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                          <div className="w-2 h-2 bg-[var(--accent)] rounded-full" />
                         </div>
                         <div className="text-[10px] text-[var(--app-foreground)] opacity-40 mt-1">Currently active plugin theme.</div>
                       </div>
@@ -214,7 +214,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ settings, onUpdate, onC
           <footer className="px-10 py-6 bg-[var(--sidebar-background)] border-t border-[var(--border)] flex justify-end">
              <button 
               onClick={onClose}
-              className="px-10 py-3 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+              className="px-10 py-3 bg-[var(--accent)] hover:bg-[var(--accent)] text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-95"
             >
               Done
             </button>

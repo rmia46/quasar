@@ -22,7 +22,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
         {/* Sidebar */}
         <aside className="w-[200px] bg-[var(--sidebar-background)] border-r border-[var(--border)] flex flex-col">
           <div className="px-6 py-5 flex items-center gap-2 border-b border-[var(--border)]">
-            <HelpCircle size={18} className="text-blue-500" />
+            <HelpCircle size={18} className="text-[var(--accent)]" />
             <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--app-foreground)] opacity-70">Help Center</h2>
           </div>
           
@@ -34,7 +34,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
                 className={`
                   w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[11px] font-bold transition-all
                   ${activeTab === tab.id 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                    ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' 
                     : 'text-[var(--app-foreground)] opacity-50 hover:opacity-100 hover:bg-[var(--tab-active)]'}
                 `}
               >
@@ -61,7 +61,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
             {activeTab === 'intro' && (
               <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
                 <section className="space-y-3">
-                  <h4 className="text-lg font-bold text-blue-500">Welcome to Quasar</h4>
+                  <h4 className="text-lg font-bold text-[var(--accent)]">Welcome to Quasar</h4>
                   <p className="text-sm opacity-70 leading-relaxed">
                     Quasar is a modern, lightweight MIPS32 R2000 Integrated Development Environment (IDE). 
                     It allows you to write, debug, and simulate MIPS assembly code with real-time feedback.
@@ -70,7 +70,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <section className="space-y-3">
-                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">1. Preparation</h5>
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]/50">1. Preparation</h5>
                     <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
                       <li><span className="font-bold text-[var(--app-foreground)]">Write:</span> Type your MIPS assembly directly in the editor.</li>
                       <li><span className="font-bold text-[var(--app-foreground)]">Save:</span> Files must be saved before running. Use <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">Ctrl+S</span> or enable "Auto-Save before Run" in Settings.</li>
@@ -78,34 +78,34 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
                   </section>
 
                   <section className="space-y-3">
-                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">2. Stepping Loop</h5>
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]/50">2. Stepping Loop</h5>
                     <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
-                      <li><span className="font-bold text-[var(--app-foreground)]">Trigger:</span> Use the <span className="text-blue-500 font-bold">Step</span> button or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">F10</span>.</li>
-                      <li><span className="font-bold text-[var(--app-foreground)]">Highlight:</span> A blue bar shows the line currently being executed.</li>
-                      <li><span className="font-bold text-[var(--app-foreground)]">Glow:</span> Modified registers will <span className="text-orange-500 font-bold">glow orange</span> in the sidebar.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Trigger:</span> Use the <span className="text-[var(--accent)] font-bold">Step</span> button or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">F10</span>.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Highlight:</span> An <span className="text-[var(--accent)] font-bold">orange bar</span> shows the line currently being executed.</li>
+                      <li><span className="font-bold text-[var(--app-foreground)]">Glow:</span> Modified registers will <span className="text-[var(--accent)] font-bold">glow orange</span> in the sidebar.</li>
                     </ul>
                   </section>
 
                   <section className="space-y-3">
-                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">3. Branching</h5>
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]/50">3. Branching</h5>
                     <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
-                      <li>Logic like <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">beq</span>, <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">bne</span>, or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">j</span> will cause the blue highlight to jump to the target label target.</li>
+                      <li>Logic like <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">beq</span>, <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">bge</span>, or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">j</span> will cause the orange highlight to jump to the target label.</li>
                     </ul>
                   </section>
 
                   <section className="space-y-3">
-                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500/50">4. Resetting</h5>
+                    <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]/50">4. Resetting</h5>
                     <ul className="space-y-2 text-xs opacity-70 list-disc pl-4">
-                      <li>Click <span className="text-orange-500 font-bold">Reset</span> or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">Ctrl+R</span> to clear registers, memory, and move back to line 1.</li>
+                      <li>Click <span className="text-[var(--accent)] font-bold">Reset</span> or <span className="font-mono bg-[var(--sidebar-background)] px-1 rounded">Ctrl+R</span> to clear registers, memory, and move back to line 1.</li>
                     </ul>
                   </section>
                 </div>
 
-                <section className="p-4 bg-blue-600/5 border border-blue-600/20 rounded-2xl relative overflow-hidden">
+                <section className="p-4 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-2 opacity-10">
                     <Book size={48} />
                   </div>
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 mb-2">Pro-Tip</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)] mb-2">Pro-Tip</h5>
                   <p className="text-xs opacity-70 leading-relaxed">
                     If you are stepping through a long loop and get bored, you can click <span className="font-bold text-green-500">Run (F5)</span> at any point to execute the rest of the program at full speed!
                   </p>
@@ -125,7 +125,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
                     { keys: 'F10', desc: 'Step forward' },
                   ].map(sh => (
                     <div key={sh.keys} className="flex items-center justify-between p-3 bg-[var(--sidebar-background)] border border-[var(--border)] rounded-lg">
-                      <span className="text-xs font-bold text-blue-500 font-mono">{sh.keys}</span>
+                      <span className="text-xs font-bold text-[var(--accent)] font-mono">{sh.keys}</span>
                       <span className="text-xs opacity-60">{sh.desc}</span>
                     </div>
                   ))}
@@ -161,30 +161,30 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
             {activeTab === 'mips' && (
               <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
                 <section className="space-y-4">
-                  <h4 className="text-sm font-bold text-blue-500">Supported Instructions</h4>
+                  <h4 className="text-sm font-bold text-[var(--accent)]">Supported Instructions</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Arithmetic</h5>
-                      <div className="text-xs opacity-70">add, addu, sub, subu, addi, lui</div>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap">add, addu, sub, subu, addi, addiu, lui, mult, multu, div, divu</div>
                     </div>
                     <div>
-                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Logical</h5>
-                      <div className="text-xs opacity-70">and, or, xor, nor, andi, ori, xori</div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Logical & Shift</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap">and, or, xor, nor, andi, ori, xori, sll, srl, sra, sllv, srlv, srav</div>
                     </div>
                     <div>
                       <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Memory</h5>
-                      <div className="text-xs opacity-70">lw, sw, lb, sb, lh, sh</div>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap">lw, sw, lb, lbu, lh, lhu, sb, sh</div>
                     </div>
                     <div>
-                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Control Flow</h5>
-                      <div className="text-xs opacity-70">j, jal, jr, beq, bne, slt, sltu</div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Control & Pseudo</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap">j, jal, jr, jalr, beq, bne, slt, sltu, bge, ble, bgt, blt, beqz, bnez, li, la, move</div>
                     </div>
                   </div>
                 </section>
-                <section className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <p className="text-[11px] font-bold text-blue-500 uppercase tracking-widest mb-2">Special Note</p>
+                <section className="p-4 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg">
+                  <p className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-widest mb-2">Directives & Syscalls</p>
                   <p className="text-xs opacity-70">
-                    Use <span className="font-bold">syscall</span> with $v0=1 to print integers and $v0=10 to exit.
+                    Use <span className="font-bold">.data</span> and <span className="font-bold">.text</span> sections. Supports <span className="font-bold">.asciiz</span> and <span className="font-bold">.word</span>. Syscalls: $v0=1 (int), $v0=4 (string), $v0=10 (exit).
                   </p>
                 </section>
               </div>
@@ -195,7 +195,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
           <footer className="px-8 py-4 bg-[var(--sidebar-background)] border-t border-[var(--border)] flex justify-end">
              <button 
               onClick={onClose}
-              className="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-blue-600/20"
+              className="px-8 py-2 bg-[var(--accent)] hover:bg-[var(--accent)] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-[var(--accent)]/20"
             >
               Close
             </button>

@@ -23,7 +23,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
         <div className="px-8 pb-10 flex flex-col items-center">
           {/* Logo Section */}
           <div className="w-24 h-24 mb-6 relative">
-            <div className="absolute inset-0 bg-blue-500/10 blur-2xl rounded-full" />
+            <div className="absolute inset-0 bg-[var(--accent)]/10 blur-2xl rounded-full" />
             <div className="relative bg-[var(--toolbar-background)] border border-[var(--border)] rounded-[2rem] w-full h-full flex items-center justify-center shadow-sm">
               <img src="/quasar-logo.svg" alt="Quasar Logo" className="w-14 h-12 object-contain" />
             </div>
@@ -33,7 +33,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           <div className="text-center space-y-2 mb-8">
             <h2 className="text-2xl font-black tracking-tight text-[var(--app-foreground)]">Quasar</h2>
             <div className="flex items-center justify-center gap-2.5">
-              <span className="text-[10px] font-black px-2 py-0.5 bg-blue-500 text-white rounded-md uppercase tracking-widest shadow-lg shadow-blue-500/20">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-[var(--accent)] text-white rounded-md uppercase tracking-widest shadow-lg shadow-[var(--accent)]/20">
                 v1.5.0
               </span>
               <span className="text-[10px] font-bold text-[var(--app-foreground)] opacity-40 uppercase tracking-widest">
@@ -53,18 +53,18 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
               href="https://github.com/rmia46/quasar" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 p-4 bg-[var(--toolbar-background)] border border-[var(--border)] rounded-2xl hover:border-blue-500/50 hover:bg-[var(--tab-active)] transition-all group no-underline"
+              className="flex flex-col items-center gap-2 p-4 bg-[var(--toolbar-background)] border border-[var(--border)] rounded-2xl hover:border-[var(--accent)]/50 hover:bg-[var(--tab-active)] transition-all group no-underline"
             >
-              <Code size={20} className="text-[var(--app-foreground)] opacity-60 group-hover:text-blue-500 group-hover:opacity-100 transition-all" />
+              <Code size={20} className="text-[var(--app-foreground)] opacity-60 group-hover:text-[var(--accent)] group-hover:opacity-100 transition-all" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--app-foreground)] opacity-60 group-hover:opacity-100">Source Code</span>
             </a>
             <a 
               href="https://github.com/rmia46" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 p-4 bg-[var(--toolbar-background)] border border-[var(--border)] rounded-2xl hover:border-blue-500/50 hover:bg-[var(--tab-active)] transition-all group no-underline"
+              className="flex flex-col items-center gap-2 p-4 bg-[var(--toolbar-background)] border border-[var(--border)] rounded-2xl hover:border-[var(--accent)]/50 hover:bg-[var(--tab-active)] transition-all group no-underline"
             >
-              <Globe size={20} className="text-[var(--app-foreground)] opacity-60 group-hover:text-blue-500 group-hover:opacity-100 transition-all" />
+              <Globe size={20} className="text-[var(--app-foreground)] opacity-60 group-hover:text-[var(--accent)] group-hover:opacity-100 transition-all" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--app-foreground)] opacity-60 group-hover:opacity-100">Developer</span>
             </a>
           </div>
