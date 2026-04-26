@@ -159,32 +159,87 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
             )}
 
             {activeTab === 'mips' && (
-              <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300 pb-8">
                 <section className="space-y-4">
-                  <h4 className="text-sm font-bold text-[var(--accent)]">Supported Instructions</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h4 className="text-sm font-bold text-[var(--accent)]">Supported Core Instructions</h4>
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Arithmetic</h5>
-                      <div className="text-xs opacity-70 whitespace-pre-wrap">add, addu, sub, subu, addi, addiu, lui, mult, multu, div, divu</div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Arithmetic & Mult/Div</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        add, addu, sub, subu, mult, multu, div, divu, addi, addiu, lui, mfhi, mflo, mthi, mtlo
+                      </div>
                     </div>
                     <div>
                       <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Logical & Shift</h5>
-                      <div className="text-xs opacity-70 whitespace-pre-wrap">and, or, xor, nor, andi, ori, xori, sll, srl, sra, sllv, srlv, srav</div>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        and, or, xor, nor, andi, ori, xori, sll, srl, sra, sllv, srlv, srav
+                      </div>
                     </div>
                     <div>
-                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Memory</h5>
-                      <div className="text-xs opacity-70 whitespace-pre-wrap">lw, sw, lb, lbu, lh, lhu, sb, sh</div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Memory Access</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        lw, sw, lb, lbu, lh, lhu, sb, sh
+                      </div>
                     </div>
                     <div>
-                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Control & Pseudo</h5>
-                      <div className="text-xs opacity-70 whitespace-pre-wrap">j, jal, jr, jalr, beq, bne, slt, sltu, bge, ble, bgt, blt, beqz, bnez, li, la, move</div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Control & Comparison</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        j, jal, jr, jalr, beq, bne, slt, sltu, slti, sltiu, bltz, bgez, blez, bgtz
+                      </div>
                     </div>
                   </div>
                 </section>
-                <section className="p-4 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg">
-                  <p className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-widest mb-2">Directives & Syscalls</p>
-                  <p className="text-xs opacity-70">
-                    Use <span className="font-bold">.data</span> and <span className="font-bold">.text</span> sections. Supports <span className="font-bold">.asciiz</span> and <span className="font-bold">.word</span>. Syscalls: $v0=1 (int), $v0=4 (string), $v0=10 (exit).
+
+                <section className="space-y-4">
+                  <h4 className="text-sm font-bold text-[var(--accent)]">Floating Point (CP1)</h4>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Single Precision</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        add.s, sub.s, mul.s, div.s, l.s, s.s, mov.s, cvt.s.w, lwc1, swc1, mtc1, mfc1
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold uppercase opacity-40 mb-2">Double Precision</h5>
+                      <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                        add.d, sub.d, mul.d, div.d, l.d, s.d, mov.d, ldc1, sdc1
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <h4 className="text-sm font-bold text-[var(--accent)]">Pseudo-Instructions</h4>
+                  <div className="grid grid-cols-1">
+                    <div className="text-xs opacity-70 whitespace-pre-wrap font-mono leading-relaxed">
+                      li, la, move, bge, ble, bgt, blt, beqz, bnez, nop
+                    </div>
+                  </div>
+                </section>
+
+                <section className="p-4 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg space-y-3">
+                  <p className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-widest">Directives & Sections</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <p className="text-xs opacity-70">
+                      <span className="font-bold">.data:</span> Define data segment<br/>
+                      <span className="font-bold">.text:</span> Define code segment<br/>
+                      <span className="font-bold">.asciiz:</span> String definition
+                    </p>
+                    <p className="text-xs opacity-70">
+                      <span className="font-bold">.word:</span> 32-bit integer(s)<br/>
+                      <span className="font-bold">.float:</span> 32-bit float(s)<br/>
+                      <span className="font-bold">.double:</span> 64-bit float(s)
+                    </p>
+                  </div>
+                </section>
+
+                <section className="p-4 bg-[var(--sidebar-background)] border border-[var(--border)] rounded-lg">
+                  <p className="text-[11px] font-bold opacity-40 uppercase tracking-widest mb-2">Standard Syscalls</p>
+                  <p className="text-xs opacity-70 leading-relaxed font-mono">
+                    $v0=1: print_int ($a0)<br/>
+                    $v0=2: print_float ($f12)<br/>
+                    $v0=4: print_string ($a0)<br/>
+                    $v0=10: exit program
                   </p>
                 </section>
               </div>
