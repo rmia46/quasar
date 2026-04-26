@@ -34,7 +34,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             <h2 className="text-2xl font-black tracking-tight text-[var(--app-foreground)]">Quasar</h2>
             <div className="flex items-center justify-center gap-2.5">
               <span className="text-[10px] font-black px-2 py-0.5 bg-[var(--accent)] text-white rounded-md uppercase tracking-widest shadow-lg shadow-[var(--accent)]/20">
-                v1.5.0
+                v1.6.0
               </span>
               <span className="text-[10px] font-bold text-[var(--app-foreground)] opacity-40 uppercase tracking-widest">
                 MIPS32 R2000 IDE
