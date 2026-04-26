@@ -4,6 +4,9 @@ pub enum Directive {
     Data,
     Text,
     Asciiz(String),
+    Float(Vec<f32>),
+    Double(Vec<f64>),
+    Word(Vec<i32>),
 }
 
 pub enum ParseResult {
@@ -72,36 +75,36 @@ impl Parser {
             
             // Memory
             "lw"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lw { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lw { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "lb"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lb { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lb { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "lbu"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lbu { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lbu { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "lh"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lh { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lh { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "lhu"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lhu { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lhu { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "sw"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Sw { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sw { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "sb"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Sb { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sb { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
             "sh"   => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Sh { rt: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sh { rt: Self::reg(parts[1])?, rs, offset, label })))
             },
 
             // Branches
@@ -123,14 +126,37 @@ impl Parser {
             "mfc1" => Ok(Some(ParseResult::Instruction(MipsInstruction::Mfc1 { rt: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
             "cvt.s.w" => Ok(Some(ParseResult::Instruction(MipsInstruction::CvtSW { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
             "add.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::AddS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "add.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::AddD { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "sub.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::SubS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "sub.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::SubD { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "mul.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::MulS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "mul.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::MulD { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "div.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::DivS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
+            "div.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::DivD { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])?, ft: Self::reg(parts[3])? }))),
             "swc1" => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Swc1 { ft: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Swc1 { ft: Self::reg(parts[1])?, rs, offset, label })))
             },
             "lwc1" => {
-                let (offset, rs) = Self::parse_mem(parts[2])?;
-                Ok(Some(ParseResult::Instruction(MipsInstruction::Lwc1 { ft: Self::reg(parts[1])?, rs, offset })))
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Lwc1 { ft: Self::reg(parts[1])?, rs, offset, label })))
             },
+            "sdc1" => {
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Sdc1 { ft: Self::reg(parts[1])?, rs, offset, label })))
+            },
+            "ldc1" => {
+                let (offset, rs, label) = Self::parse_mem(parts[2])?;
+                Ok(Some(ParseResult::Instruction(MipsInstruction::Ldc1 { ft: Self::reg(parts[1])?, rs, offset, label })))
+            },
+            
+            // FP Pseudo-instructions
+            "l.s" | "lw.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::LS { ft: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "s.s" | "sw.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::SS { ft: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "l.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::LD { ft: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "s.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::SD { ft: Self::reg(parts[1])?, label: parts[2].to_string() }))),
+            "mov.s" => Ok(Some(ParseResult::Instruction(MipsInstruction::MovS { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
+            "mov.d" => Ok(Some(ParseResult::Instruction(MipsInstruction::MovD { fd: Self::reg(parts[1])?, fs: Self::reg(parts[2])? }))),
             
             // J-Type
             "j"    => Ok(Some(ParseResult::Instruction(MipsInstruction::J    { label: parts[1].to_string() }))),
@@ -143,6 +169,7 @@ impl Parser {
             "la"   => Ok(Some(ParseResult::Instruction(MipsInstruction::La { rt: Self::reg(parts[1])?, label: parts[2].to_string() }))),
             "move" => Ok(Some(ParseResult::Instruction(MipsInstruction::Addu  { rd: Self::reg(parts[1])?, rs: Self::reg(parts[2])?, rt: 0 }))),
 
+
             "syscall" => Ok(Some(ParseResult::Instruction(MipsInstruction::Syscall))),
             "break"   => Ok(Some(ParseResult::Instruction(MipsInstruction::Break))),
             "nop" => Ok(Some(ParseResult::Instruction(MipsInstruction::Noop))),
@@ -151,7 +178,9 @@ impl Parser {
     }
 
     fn parse_directive(line: &str) -> Result<Directive, String> {
-        let parts: Vec<&str> = line.split_whitespace().collect();
+        let parts: Vec<&str> = line.split(|c: char| c.is_whitespace()).filter(|s| !s.is_empty()).collect();
+        if parts.is_empty() { return Err("Empty directive".to_string()); }
+        
         let name = parts[0].to_lowercase();
         match name.as_str() {
             ".data" => Ok(Directive::Data),
@@ -159,6 +188,18 @@ impl Parser {
             ".asciiz" => {
                 let content = Self::parse_asciiz(line)?;
                 Ok(Directive::Asciiz(content))
+            },
+            ".float" => {
+                let floats = Self::parse_floats(&parts[1..])?;
+                Ok(Directive::Float(floats))
+            },
+            ".double" => {
+                let doubles = Self::parse_doubles(&parts[1..])?;
+                Ok(Directive::Double(doubles))
+            },
+            ".word" => {
+                let words = Self::parse_words(&parts[1..])?;
+                Ok(Directive::Word(words))
             },
             _ => Err(format!("Unknown directive: {}", name)),
         }
@@ -172,6 +213,39 @@ impl Parser {
         // Handle basic escapes
         s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"");
         Ok(s)
+    }
+
+    fn parse_floats(parts: &[&str]) -> Result<Vec<f32>, String> {
+        let mut result = Vec::new();
+        let joined = parts.join("");
+        for s in joined.split(',') {
+            let s = s.trim();
+            if s.is_empty() { continue; }
+            result.push(s.parse::<f32>().map_err(|_| format!("Invalid float: {}", s))?);
+        }
+        Ok(result)
+    }
+
+    fn parse_doubles(parts: &[&str]) -> Result<Vec<f64>, String> {
+        let mut result = Vec::new();
+        let joined = parts.join("");
+        for s in joined.split(',') {
+            let s = s.trim();
+            if s.is_empty() { continue; }
+            result.push(s.parse::<f64>().map_err(|_| format!("Invalid double: {}", s))?);
+        }
+        Ok(result)
+    }
+
+    fn parse_words(parts: &[&str]) -> Result<Vec<i32>, String> {
+        let mut result = Vec::new();
+        let joined = parts.join("");
+        for s in joined.split(',') {
+            let s = s.trim();
+            if s.is_empty() { continue; }
+            result.push(Self::imm_i32(s)?);
+        }
+        Ok(result)
     }
 
     fn reg(s: &str) -> Result<usize, String> {
@@ -221,11 +295,16 @@ impl Parser {
         }
     }
 
-    fn parse_mem(s: &str) -> Result<(i32, usize), String> {
-        let parts: Vec<&str> = s.split(|c| c == '(' || c == ')').filter(|p| !p.is_empty()).collect();
-        if parts.len() != 2 { return Err(format!("Invalid memory syntax: {}", s)); }
-        let offset = Self::imm_i32(parts[0])?;
-        let rs = Self::reg(parts[1])?;
-        Ok((offset, rs))
+    fn parse_mem(s: &str) -> Result<(i32, Option<usize>, Option<String>), String> {
+        if s.contains('(') && s.contains(')') {
+            let parts: Vec<&str> = s.split(|c| c == '(' || c == ')').filter(|p| !p.is_empty()).collect();
+            if parts.len() != 2 { return Err(format!("Invalid memory syntax: {}", s)); }
+            let offset = Self::imm_i32(parts[0])?;
+            let rs = Self::reg(parts[1])?;
+            Ok((offset, Some(rs), None))
+        } else {
+            // Treat as label
+            Ok((0, None, Some(s.to_string())))
+        }
     }
 }

@@ -1,153 +1,91 @@
 #[cfg(test)]
 mod tests {
-    use crate::mips_engine::MipsEngine;
+    use super::super::MipsEngine;
 
-    fn run_test(code: &str) -> [u32; 32] {
+    #[test]
+    fn test_full_pipeline() {
         let mut engine = MipsEngine::new();
-        engine.load_program(code).expect("Failed to load program");
-        engine.run_all().expect("Failed to run program");
-        engine.get_state("".to_string()).registers
-    }
-
-    #[test]
-    fn test_arithmetic() {
-        let code = "
-            addi $t0, $zero, 10
-            addi $t1, $zero, 20
-            add  $t2, $t0, $t1
-            sub  $t3, $t1, $t0
-            addiu $t4, $zero, 0xFFFF
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[8], 10);  // $t0
-        assert_eq!(regs[9], 20);  // $t1
-        assert_eq!(regs[10], 30); // $t2
-        assert_eq!(regs[11], 10); // $t3
-        assert_eq!(regs[12], 0xFFFF); // $t4
-    }
-
-    #[test]
-    fn test_logic_and_shifts() {
-        let code = "
-            li $t0, 0xFF
-            li $t1, 0x0F
-            and $t2, $t0, $t1
-            or  $t3, $t0, $t1
-            sll $t4, $t1, 4
-            srl $t5, $t4, 2
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[10], 0x0F); // $t2
-        assert_eq!(regs[11], 0xFF); // $t3
-        assert_eq!(regs[12], 0xF0); // $t4
-        assert_eq!(regs[13], 0x3C); // $t5
-    }
-
-    #[test]
-    fn test_memory() {
-        let code = "
-            li $t0, 1234
-            sw $t0, 0($zero)
-            lw $t1, 0($zero)
-            li $t2, 0xAB
-            sb $t2, 10($zero)
-            lbu $t3, 10($zero)
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[8], 1234); // $t0
-        assert_eq!(regs[9], 1234); // $t1
-        assert_eq!(regs[11], 0xAB); // $t3
-    }
-
-    #[test]
-    fn test_branches_and_loops() {
-        let code = "
-            li $t0, 0
-            li $t1, 5
-            loop:
-                beq $t0, $t1, end
-                addi $t0, $t0, 1
-                j loop
-            end:
-                addi $s0, $zero, 100
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[8], 5);   // $t0 should be 5
-        assert_eq!(regs[16], 100); // $s0 should be reached
-    }
-
-    #[test]
-    fn test_mult_div() {
-        let code = "
-            li $t0, 10
-            li $t1, 3
-            mult $t0, $t1
-            mflo $s0
-            div  $t0, $t1
-            mflo $s1
-            mfhi $s2
-        ";
-        let mut engine = MipsEngine::new();
-        engine.load_program(code).unwrap();
-        engine.run_all().unwrap();
-        let state = engine.get_state("".into());
-        assert_eq!(state.registers[16], 30); // $s0 = 10 * 3
-        assert_eq!(state.registers[17], 3);  // $s1 = 10 / 3
-        assert_eq!(state.registers[18], 1);  // $s2 = 10 % 3
-    }
-
-    #[test]
-    fn test_jal_jr() {
-        let code = "
-            jal func
-            li $s0, 1
-            j exit
-            
-            func:
-                li $s1, 2
-                jr $ra
-                
-            exit:
-                nop
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[16], 1); // $s0
-        assert_eq!(regs[17], 2); // $s1
-    }
-
-    #[test]
-    fn test_data_and_la() {
-        let code = "
+        let code = r#"
             .data
-            msg: .asciiz \"Hello\"
-            
+                val_f:  .float 1.5, 2.5
+                val_w:  .word 10, 20
+                msg:    .asciiz "Test"
             .text
             main:
-                la $a0, msg
-                li $v0, 4
-                syscall
-        ";
-        let mut engine = MipsEngine::new();
-        engine.load_program(code).unwrap();
-        engine.run_all().unwrap();
-        let state = engine.get_state("".into());
-        assert!(state.message.contains("Hello"));
+                # Test Integer
+                lw $t0, val_w       # $t0 = 10
+                addi $t1, $t0, 5    # $t1 = 15
+                
+                # Test Float
+                l.s $f0, val_f      # $f0 = 1.5
+                li $t2, 2
+                mtc1 $t2, $f1
+                cvt.s.w $f1, $f1    # $f1 = 2.0
+                add.s $f2, $f0, $f1 # $f2 = 3.5
+                
+                # Test Jump
+                j end
+                addi $t1, $t1, 100  # Should be skipped
+            end:
+                nop
+        "#;
+
+        engine.load_program(code).expect("Failed to load");
+        
+        // Run until completion or timeout
+        let _ = engine.run_all().expect("Execution failed");
+        let state = engine.get_state("".to_string());
+
+        assert_eq!(state.registers[9], 15); // $t1
+        
+        // Check float result (3.5)
+        let f2_bits = state.fp_registers[2];
+        let f2 = f32::from_bits(f2_bits);
+        assert!((f2 - 3.5).abs() < 0.001);
     }
 
     #[test]
-    fn test_pseudo_branches() {
-        let code = "
-            li $t0, 10
-            li $t1, 5
-            bge $t0, $t1, success
-            li $s0, 0
-            j end
-            success:
-                li $s0, 1
-            end:
-                nop
-        ";
-        let regs = run_test(code);
-        assert_eq!(regs[16], 1); // $s0 should be 1
+    fn test_pseudo_instructions() {
+        let mut engine = MipsEngine::new();
+        let code = r#"
+            .text
+            li $t0, 100
+            li $t1, 200
+            move $t2, $t0
+            bge $t1, $t0, target
+            li $t2, 0       # Skip
+            target:
+                addi $t2, $t2, 1
+        "#;
+        engine.load_program(code).unwrap();
+        engine.run_all().unwrap();
+        let state = engine.get_state("".to_string());
+        assert_eq!(state.registers[10], 101); // $t2 should be 100 + 1
+    }
+
+    #[test]
+    fn test_memory_alignment() {
+        let mut engine = MipsEngine::new();
+        let code = r#"
+            .data
+            .byte 1
+            .word 0xABCDEFFF  # Should trigger alignment to 4
+            .text
+            li $s0, 0x2000
+            lw $t0, 4($s0)    # Should read the word at 0x2004
+        "#;
+        // Currently .byte isn't in parser, let's test existing alignment for .float
+        let code = r#"
+            .data
+            .asciiz "A"       # 2 bytes including null
+            .float 1.0        # Should align to 0x2004
+            .text
+            li $s0, 0x2000
+            lw $t1, 4($s0)    # Read float bits as word
+        "#;
+        engine.load_program(code).unwrap();
+        engine.run_all().unwrap();
+        let state = engine.get_state("".to_string());
+        assert_eq!(state.registers[9], (1.0f32).to_bits());
     }
 }

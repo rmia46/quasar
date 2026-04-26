@@ -41,14 +41,14 @@ pub enum MipsInstruction {
     Lui  { rt: usize, imm: u16 },
 
     // Memory
-    Lw   { rt: usize, rs: usize, offset: i32 },
-    Lb   { rt: usize, rs: usize, offset: i32 },
-    Lbu  { rt: usize, rs: usize, offset: i32 },
-    Lh   { rt: usize, rs: usize, offset: i32 },
-    Lhu  { rt: usize, rs: usize, offset: i32 },
-    Sw   { rt: usize, rs: usize, offset: i32 },
-    Sb   { rt: usize, rs: usize, offset: i32 },
-    Sh   { rt: usize, rs: usize, offset: i32 },
+    Lw   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Lb   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Lbu  { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Lh   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Lhu  { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Sw   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Sb   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Sh   { rt: usize, rs: Option<usize>, offset: i32, label: Option<String> },
 
     // Branches
     Beq  { rs: usize, rt: usize, label: String },
@@ -78,8 +78,25 @@ pub enum MipsInstruction {
     Mfc1  { rt: usize, fs: usize },
     CvtSW { fd: usize, fs: usize },
     AddS  { fd: usize, fs: usize, ft: usize },
-    Swc1  { ft: usize, rs: usize, offset: i32 },
-    Lwc1  { ft: usize, rs: usize, offset: i32 },
+    AddD  { fd: usize, fs: usize, ft: usize },
+    SubS  { fd: usize, fs: usize, ft: usize },
+    SubD  { fd: usize, fs: usize, ft: usize },
+    MulS  { fd: usize, fs: usize, ft: usize },
+    MulD  { fd: usize, fs: usize, ft: usize },
+    DivS  { fd: usize, fs: usize, ft: usize },
+    DivD  { fd: usize, fs: usize, ft: usize },
+    Swc1  { ft: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Lwc1  { ft: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Sdc1  { ft: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+    Ldc1  { ft: usize, rs: Option<usize>, offset: i32, label: Option<String> },
+
+    // FP Pseudo-instructions
+    LS    { ft: usize, label: String },
+    SS    { ft: usize, label: String },
+    LD    { ft: usize, label: String },
+    SD    { ft: usize, label: String },
+    MovS  { fd: usize, fs: usize },
+    MovD  { fd: usize, fs: usize },
 
     // Special
     Syscall,

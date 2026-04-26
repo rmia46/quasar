@@ -213,6 +213,7 @@ function App() {
   });
 
   const [changedIndices, setChangedIndices] = useState<number[]>([]);
+  const [changedFPIndices, setChangedFPIndices] = useState<number[]>([]);
   const [hiLoChanged, setHiLoChanged] = useState({ hi: false, lo: false });
   const [consoleOutput, setConsoleOutput] = useState('');
 
@@ -224,6 +225,14 @@ function App() {
       }
     });
     setChangedIndices(changed);
+
+    const fpChanged: number[] = [];
+    newState.fp_registers.forEach((val, idx) => {
+      if (val !== state.fp_registers[idx]) {
+        fpChanged.push(idx);
+      }
+    });
+    setChangedFPIndices(fpChanged);
     
     setHiLoChanged({
       hi: newState.hi !== state.hi,
@@ -235,7 +244,7 @@ function App() {
     }
     
     setState(newState);
-  }, [state.registers, state.hi, state.lo]);
+  }, [state.registers, state.fp_registers, state.hi, state.lo]);
 
   // File Operations
   const handleNewFile = useCallback(async () => {
@@ -439,6 +448,7 @@ function App() {
     try {
       const result = await invoke<SimulatorState>('reset_simulator');
       setChangedIndices([]);
+      setChangedFPIndices([]);
       setHiLoChanged({ hi: false, lo: false });
       setConsoleOutput('');
       setState(result);
@@ -768,7 +778,8 @@ function App() {
                 registers={state.registers} 
                 fp_registers={[]}
                 view="core"
-                changedIndices={changedIndices} 
+                changedIndices={changedIndices}
+                changedFPIndices={[]}
                 hi={state.hi} 
                 lo={state.lo} 
                 hiLoChanged={hiLoChanged} 
@@ -779,7 +790,8 @@ function App() {
                 registers={[]} 
                 fp_registers={state.fp_registers}
                 view="cp1"
-                changedIndices={[]} 
+                changedIndices={[]}
+                changedFPIndices={changedFPIndices}
                 hi={0} 
                 lo={0} 
                 hiLoChanged={{hi: false, lo: false}} 
