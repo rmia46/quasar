@@ -461,7 +461,7 @@ function App() {
 
       {isSettingsOpen && <SettingsDialog settings={settings} onUpdate={setSettings} onClose={() => setIsSettingsOpen(false)} onLoadTheme={handleLoadTheme} />}
       {isHelpOpen && <HelpDialog onClose={() => setIsHelpOpen(false)} />}
-      {isAboutOpen && <AboutDialog onClose={() => setIsAboutOpen(true)} />}
+      {isAboutOpen && <AboutDialog onClose={() => setIsAboutOpen(false)} />}
     </div>
   );
 }
